@@ -1,0 +1,14 @@
+drop *
+keep TwoProng*
+keep Muon*
+keep Jet*
+keep PV*
+keep MET*
+keep Tau*
+keep event
+keep run
+keep luminosityBlock
+keep year
+keep mcType
+keep passTrigger
+keep attoVersion
