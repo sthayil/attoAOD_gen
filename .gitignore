@@ -8,3 +8,16 @@ build
 *.d
 *.so
 *.pcm
+ana/
+el_dyjetstoll_2018/
+el_egamma2018A/
+el_egamma2018B/
+el_wjetstolnu_2018/
+keepoutputbranches.txt
+mu_dyjetstoll_2018/
+mu_singlemuon2018A/
+mu_singlemuon2018B/
+mu_singlemuon2018C/
+mu_wjetstolnu_2018/
+oldruns/
+python/postprocessing/modules/30062022_attoAOD_ttw.py
