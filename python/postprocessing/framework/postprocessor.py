@@ -266,4 +266,6 @@ class PostProcessor:
             self.jobReport.addOutputFile(self.haddFileName)
             self.jobReport.save()
             
-        print('\n\n'+str(totEntriesRead))
+        print('\n\n Total entries read: '+str(totEntriesRead)+'\n\n')
+        with open('totentries.txt', 'w') as entriesfile:
+            entriesfile.write(str(totEntriesRead))

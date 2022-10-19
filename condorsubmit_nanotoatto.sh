@@ -33,7 +33,7 @@ printf "\n$6 : number of files to run over in this job\n\n"
 
 python scripts/create_attoAOD.py -m $6 --batch $1 -f $3_$4.txt -l $2 -I PhysicsTools.NanoAODTools.postprocessing.modules.attoAOD_ttw_$2 $2_$4_$3 --bo keepoutputbranches_$2.txt
 
-ls
-
+cp totentries.txt $1_totentries.txt
 xrdcp $1_$2_$3_$4.root $5
+xrdcp $1_totentries.txt $5
 #rm $1_$2_$3_$4.root
