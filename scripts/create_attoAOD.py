@@ -110,8 +110,11 @@ if __name__ == "__main__":
         # nOutputFiles = MaxFiles
         # if MaxFiles == -1: nOutputFiles = nInputFiles
 
-        for i in range(startfile,endfile): InputFiles[i] = InputFiles[i].strip()
-        #print InputFiles[startfile:endfile]
+        hostname = socket.gethostname()
+        if ".fnal.gov" in hostname:
+            for i in range(startfile,endfile): InputFiles[i] = 'root://cmseos.fnal.gov/'+InputFiles[i].strip()
+        elif "hexcms" in hostname:
+            for i in range(startfile,endfile): InputFiles[i] = InputFiles[i].strip()
         return InputFiles[startfile:endfile]
 
     FileList = options.FileList
