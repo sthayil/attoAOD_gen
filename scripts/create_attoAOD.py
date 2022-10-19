@@ -11,13 +11,21 @@ from datetime import datetime
 #===================== define input/output here ===========================
 OutputFile = ""      #if set to "", then OutputFile = <FileListName> + _plots.root
 MaxEvents = 0        #set to 0 to run all events in each file
-MaxFiles = -1        #set to -1 to run all files in file list
-#MaxFiles = 25
+#MaxFiles = -1        #set to -1 to run all files in file list
+#MaxFiles = 500
 
 if __name__ == "__main__":
     from optparse import OptionParser
     parser = OptionParser(usage="%prog [options] outputDir inputFiles")
 
+    parser.add_option("-m", "--maxFiles", dest="MaxFiles", type=int, default=500,
+                      help="Max #files to run over from filelist")
+    parser.add_option("--batch", dest="Batch", type=int, default=None,
+                      help="Batch number of this run")
+    parser.add_option("-l", "--lepton", dest="lepton", type="string", default='mu',
+                      help="Lepton to run over (el/mu)")
+    parser.add_option("-f", "--filelist", dest="FileList", type="string", default=None,
+                      help="Filelist to run over")
 
     parser.add_option("-s", "--postfix", dest="postfix", type="string", default=None,
                       help="Postfix which will be appended to the file name (default: _Friend for friends, _Skim for skims)")
@@ -81,31 +89,39 @@ if __name__ == "__main__":
         options.branchsel_in = options.branchsel
         options.branchsel_out = options.branchsel
 
-    def read_file_list(FileList, MaxFiles):
+    def read_file_list(FileList, MaxFiles, Batch):
         f=open(FileList, "r")
         InputFiles = f.readlines()
         f.close()
 
         nInputFiles = len(InputFiles)
 
-        if MaxFiles > nInputFiles:
-            print "MaxFiles", MaxFiles, "> nInputFiles", nInputFiles
-            quit()
+        startfile = int(Batch)*int(MaxFiles)
+        endfile = startfile + int(MaxFiles)
+        if nInputFiles<startfile:
+            raise RuntimeError(
+                "Batch number is too high!")
+        if nInputFiles<endfile: endfile=nInputFiles
 
-        nOutputFiles = MaxFiles
-        if MaxFiles == -1: nOutputFiles = nInputFiles
+        # if MaxFiles > nInputFiles:
+        #     print "MaxFiles", MaxFiles, "> nInputFiles", nInputFiles
+        #     quit()
 
-        for i in range(nInputFiles): InputFiles[i] = InputFiles[i].strip()
-        #print InputFiles[0:nOutputFiles]
-        return InputFiles[0:nOutputFiles]
+        # nOutputFiles = MaxFiles
+        # if MaxFiles == -1: nOutputFiles = nInputFiles
 
-    FileList = sys.argv[1]
+        for i in range(startfile,endfile): InputFiles[i] = InputFiles[i].strip()
+        #print InputFiles[startfile:endfile]
+        return InputFiles[startfile:endfile]
+
+    FileList = options.FileList
+    Batch = options.Batch
     if OutputFile == "":
         OutputFile = FileList.split("/")[-1]
         OutputFile = OutputFile.split(".")[0]
-        OutputFile = sys.argv[2]+"_"+ OutputFile + ".root"
+        OutputFile = str(Batch)+"_"+options.lepton+"_"+ OutputFile + ".root"
 
-    p = PostProcessor(".", read_file_list(FileList, MaxFiles),
+    p = PostProcessor(".", read_file_list(FileList, options.MaxFiles, Batch),
                       cut=options.cut,
                       branchsel=options.branchsel_in,
                       modules=modules,

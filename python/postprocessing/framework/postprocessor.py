@@ -265,3 +265,5 @@ class PostProcessor:
         if self.jobReport:
             self.jobReport.addOutputFile(self.haddFileName)
             self.jobReport.save()
+            
+        print('\n\n'+str(totEntriesRead))

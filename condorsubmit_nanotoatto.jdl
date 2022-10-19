@@ -1,0 +1,16 @@
+universe = vanilla
+initialdir = .
+#use_x509userproxy = true
+#x509userproxy         = $ENV(X509_USER_PROXY)
+error  = ./logs/$(Process)_00000000_11111111_22222222.out
+log    = ./logs/$(Process)_00000000_11111111_22222222.log
+output = ./logs/$(Process)_00000000_11111111_22222222.out
+executable = condorsubmit_nanotoatto.sh
+transfer_input_files = ../filelists/11111111_22222222.txt, ../keepoutputbranches_00000000.txt
+arguments = $(Process) 00000000 11111111 22222222 33333333 44444444
+Notification = never
+#request_memory = 4000
+#request_cpus = 8
+should_transfer_files = YES
+when_to_transfer_output = ON_EXIT
+queue 55555555
