@@ -129,6 +129,8 @@ if __name__ == "__main__":
         OutputFile = OutputFile.split(".")[0]
         OutputFile = str(Batch)+"_"+options.lepton+"_"+ OutputFile + ".root"
 
+    print read_file_list(FileList, options.MaxFiles, Batch)
+
     p = PostProcessor(".", read_file_list(FileList, options.MaxFiles, Batch),
                       cut=options.cut,
                       branchsel=options.branchsel_in,
@@ -146,5 +148,3 @@ if __name__ == "__main__":
                       firstEntry=options.firstEntry,
                       outputbranchsel=options.branchsel_out)
     p.run()
-
-    print read_file_list(FileList, options.MaxFiles, Batch)
