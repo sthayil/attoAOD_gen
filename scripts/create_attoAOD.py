@@ -127,7 +127,9 @@ if __name__ == "__main__":
         OutputFile = OutputFile.split(".")[0]
         OutputFile = str(Batch)+"_"+options.lepton+"_"+ OutputFile + ".root"
 
+    hostname = socket.gethostname()
     print read_file_list(FileList, options.MaxFiles, Batch)
+    print hostname
 
     # p = PostProcessor(".", read_file_list(FileList, options.MaxFiles, Batch),
     #                   cut=options.cut,
