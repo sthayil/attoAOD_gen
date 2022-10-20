@@ -116,7 +116,8 @@ if __name__ == "__main__":
                 InputFiles[i] = 'root://cmseos.fnal.gov/'+InputFiles[i].strip()
         elif "hexcms" in hostname:
             for i in range(startfile,endfile): 
-                InputFiles[i] = InputFiles[i].strip(' \n')
+                InputFiles[i] = InputFiles[i].strip(' \n\t')
+                InputFiles[i] = InputFiles[i].replace('\n','')
         return InputFiles[startfile:endfile]
 
     FileList = options.FileList
@@ -128,20 +129,20 @@ if __name__ == "__main__":
 
     print read_file_list(FileList, options.MaxFiles, Batch)
 
-    p = PostProcessor(".", read_file_list(FileList, options.MaxFiles, Batch),
-                      cut=options.cut,
-                      branchsel=options.branchsel_in,
-                      modules=modules,
-                      compression=options.compression,
-                      friend=options.friend,
-                      haddFileName=OutputFile,
-                      #postfix=options.postfix,
-                      jsonInput=options.json,
-                      noOut=options.noOut,
-                      justcount=options.justcount,
-                      prefetch=options.prefetch,
-                      longTermCache=options.longTermCache,
-                      maxEntries=options.maxEntries,
-                      firstEntry=options.firstEntry,
-                      outputbranchsel=options.branchsel_out)
-    p.run()
+    # p = PostProcessor(".", read_file_list(FileList, options.MaxFiles, Batch),
+    #                   cut=options.cut,
+    #                   branchsel=options.branchsel_in,
+    #                   modules=modules,
+    #                   compression=options.compression,
+    #                   friend=options.friend,
+    #                   haddFileName=OutputFile,
+    #                   #postfix=options.postfix,
+    #                   jsonInput=options.json,
+    #                   noOut=options.noOut,
+    #                   justcount=options.justcount,
+    #                   prefetch=options.prefetch,
+    #                   longTermCache=options.longTermCache,
+    #                   maxEntries=options.maxEntries,
+    #                   firstEntry=options.firstEntry,
+    #                   outputbranchsel=options.branchsel_out)
+    # p.run()
