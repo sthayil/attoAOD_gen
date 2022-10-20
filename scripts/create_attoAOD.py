@@ -115,6 +115,11 @@ if __name__ == "__main__":
             for i in range(startfile,endfile): InputFiles[i] = 'root://cmseos.fnal.gov/'+InputFiles[i].strip()
         elif "hexcms" in hostname:
             for i in range(startfile,endfile): InputFiles[i] = InputFiles[i].strip()
+            #debugging
+            print "doing ls from inside create_attoAOD"
+            os.system('ls /cms/twoprong/smd376/2022-06-15-20-08/')
+            print "-----"+InputFiles[startfile]+"-----"
+            print "-----"+InputFiles[startfile+1]+"-----"
         return InputFiles[startfile:endfile]
 
     FileList = options.FileList
@@ -141,3 +146,5 @@ if __name__ == "__main__":
                       firstEntry=options.firstEntry,
                       outputbranchsel=options.branchsel_out)
     p.run()
+
+    print read_file_list(FileList, options.MaxFiles, Batch)
