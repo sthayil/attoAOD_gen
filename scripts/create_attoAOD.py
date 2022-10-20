@@ -103,18 +103,11 @@ if __name__ == "__main__":
                 "Batch number is too high!")
         if nInputFiles<endfile: endfile=nInputFiles
 
-        # if MaxFiles > nInputFiles:
-        #     print "MaxFiles", MaxFiles, "> nInputFiles", nInputFiles
-        #     quit()
-
-        # nOutputFiles = MaxFiles
-        # if MaxFiles == -1: nOutputFiles = nInputFiles
-
         hostname = socket.gethostname()
         if ".fnal.gov" in hostname:
             for i in range(startfile,endfile): 
                 InputFiles[i] = 'root://cmseos.fnal.gov/'+InputFiles[i].strip()
-        elif "hexfarm" in hostname:
+        elif "hex" in hostname:
             for i in range(startfile,endfile): 
                 InputFiles[i] = InputFiles[i].strip()
         return InputFiles[startfile:endfile]
@@ -126,24 +119,20 @@ if __name__ == "__main__":
         OutputFile = OutputFile.split(".")[0]
         OutputFile = str(Batch)+"_"+options.lepton+"_"+ OutputFile + ".root"
 
-    hostname = socket.gethostname()
-    print read_file_list(FileList, options.MaxFiles, Batch)
-    print hostname
-
-    # p = PostProcessor(".", read_file_list(FileList, options.MaxFiles, Batch),
-    #                   cut=options.cut,
-    #                   branchsel=options.branchsel_in,
-    #                   modules=modules,
-    #                   compression=options.compression,
-    #                   friend=options.friend,
-    #                   haddFileName=OutputFile,
-    #                   #postfix=options.postfix,
-    #                   jsonInput=options.json,
-    #                   noOut=options.noOut,
-    #                   justcount=options.justcount,
-    #                   prefetch=options.prefetch,
-    #                   longTermCache=options.longTermCache,
-    #                   maxEntries=options.maxEntries,
-    #                   firstEntry=options.firstEntry,
-    #                   outputbranchsel=options.branchsel_out)
-    # p.run()
+    p = PostProcessor(".", read_file_list(FileList, options.MaxFiles, Batch),
+                      cut=options.cut,
+                      branchsel=options.branchsel_in,
+                      modules=modules,
+                      compression=options.compression,
+                      friend=options.friend,
+                      haddFileName=OutputFile,
+                      #postfix=options.postfix,
+                      jsonInput=options.json,
+                      noOut=options.noOut,
+                      justcount=options.justcount,
+                      prefetch=options.prefetch,
+                      longTermCache=options.longTermCache,
+                      maxEntries=options.maxEntries,
+                      firstEntry=options.firstEntry,
+                      outputbranchsel=options.branchsel_out)
+    p.run()

@@ -31,12 +31,6 @@ printf "\n$4 : year (2016/2017/2018)"
 printf "\n$5 : outputDir to xrdcp to (EOS area for cmslpc)"
 printf "\n$6 : number of files to run over in this job\n\n"
 
-#debugging
-ls -alh /cms/twoprong/smd376/2022-06-15-20-08/NANOAOD_TwoProng_0.root
-cp /cms/twoprong/smd376/2022-06-15-20-08/NANOAOD_TwoProng_0.root .
-ls
-printf "\n\n" 
-
 python scripts/create_attoAOD.py -m $6 --batch $1 -f $3_$4.txt -l $2 -I PhysicsTools.NanoAODTools.postprocessing.modules.attoAOD_ttw_$2 $2_$4_$3 --bo keepoutputbranches_$2.txt
 
 cp totentries.txt $1_totentries.txt
