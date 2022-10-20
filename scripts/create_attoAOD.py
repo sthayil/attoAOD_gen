@@ -114,10 +114,9 @@ if __name__ == "__main__":
         if ".fnal.gov" in hostname:
             for i in range(startfile,endfile): 
                 InputFiles[i] = 'root://cmseos.fnal.gov/'+InputFiles[i].strip()
-        elif "hexcms" in hostname:
+        elif "hexfarm" in hostname:
             for i in range(startfile,endfile): 
-                InputFiles[i] = InputFiles[i].strip(' \n\t')
-                InputFiles[i] = InputFiles[i].replace('\n','')
+                InputFiles[i] = InputFiles[i].strip()
         return InputFiles[startfile:endfile]
 
     FileList = options.FileList
