@@ -7,8 +7,55 @@ options.add_argument("-y", "--year",             required=True, help="year from 
 options.add_argument("-d", "--dataset",          required=True, help="dataset", choices=['dyjetstoll','wjetstolnu','ttjets','egammaA','egammaB','egammaC','egammaD','singlemuonA','singlemuonB','singlemuonC','singlemuonD'])
 options.add_argument("-n", "--numFiles",         nargs='?',     help="#files from filelist in each job (defaults to 500)", const=500, type=int, default=500)
 options.add_argument("-o", "--outputDirectory",  nargs='?',     help="Output base directory filepath for jobs. Should be an EOS area. (Defaults to /store/user/lpcrutgers/sthayil/pseudoaxions/atto_passTrigger)", const='/store/user/lpcrutgers/sthayil/pseudoaxions/atto_passTrigger', type=str, default='/store/user/lpcrutgers/sthayil/pseudoaxions/atto_passTrigger')
-options.add_argument("-m", "--mode",         nargs='?',     help="Run mode", const='normal', type=str, default='normal', choices=['normal','totalEvents','hadd'])
+options.add_argument("-m", "--mode",             nargs='?',     help="Run mode", const='normal', type=str, default='normal', choices=['normal','hadd'])
+options.add_argument("-hd", "--haddDir",         nargs='?',     help="Directory to put hadded files in", const='hadded', type=str, default='hadded')
 ops = options.parse_args()
+
+#hadd mode--------------------------------------------------------------------------------
+if ops.mode=='hadd':
+    if not os.path.isdir(ops.haddDir): 
+        print "Making job directory "+ops.haddDir
+        os.system('mkdir '+ops.haddDir)
+    hostname = socket.gethostname()
+    jobname = ops.lepton+'_'+ops.dataset+'_'+ops.year
+    if ".fnal.gov" in hostname:
+        if (ops.outputDirectory).startswith("/store/user/"):
+            os.system('eos root://cmseos.fnal.gov ls '+ops.outputDirectory+'/'+jobname+' > haddfilelist')
+            with open('haddfilelist', 'r+') as in_file:
+                rootFiles=[]
+                totEntrFiles=[]
+                for count, line in enumerate(in_file):
+                    if ".root" in line: rootFiles.append(line.rstrip('\n'))
+                    elif ".txt" in line: totEntrFiles.append(line.rstrip('\n'))
+                if len(rootFiles)!=len(totEntrFiles): 
+                    print "#root files != #totentries files; check what's going on"
+                    exit()
+
+                os.system('rm haddfilelist')
+                os.chdir(jobname)
+
+                command='python ../scripts/haddnano.py '+jobname+'.root '
+                for rootFile in rootFiles: 
+                    os.system('xrdcp -s root://cmsxrootd.fnal.gov/'+ops.outputDirectory+'/'+jobname+'/'+rootFile+' .')
+                    command+=rootFile+' '
+                os.system(command)
+                os.system('mv '+jobname+'.root ../'+ops.haddDir)
+                for rootFile in rootFiles: os.system('rm '+rootFile)
+                tottotEntries=0
+                for totEntrFile in totEntrFiles: 
+                    os.system('xrdcp -s root://cmsxrootd.fnal.gov/'+ops.outputDirectory+'/'+jobname+'/'+totEntrFile+' .')
+                    with open(totEntrFile, 'r') as in_file: 
+                        dataline=in_file.readline()
+                        tottotEntries+=int(dataline)
+                    os.system('rm '+totEntrFile)
+                print "\n\n"+str(tottotEntries)
+                with open('../'+ops.haddDir+'/'+jobname+'_totentries.txt', 'w') as entriesfile:
+                    entriesfile.write(str(tottotEntries))
+        else:
+            print "ERROR: Output directory is not an EOS path starting in /store/user/"
+            exit()
+    else: print "adapt for hexcms"
+    exit()
 
 #directory with log files--------------------------------------------------------------------
 jobname = ops.lepton+'_'+ops.dataset+'_'+ops.year
@@ -83,5 +130,4 @@ print "Submitting jobs with condor_submit condorsubmit_nanotoatto_"+mytimestr+".
 os.system('condor_submit condorsubmit_lhetominiaod_'+mytimestr+'.jdl')
 os.system('mv condorsubmit_lhetominiaod_'+mytimestr+'.jdl jdl_files/')
 
-#hadd mode--------------------------------------------------------------------------------
 #totalEvents mode-------------------------------------------------------------------------
