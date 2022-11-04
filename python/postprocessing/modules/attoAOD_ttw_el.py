@@ -104,6 +104,10 @@ class attoAOD_ttw_el(Module):
 
 # define modules using the syntax 'name = lambda : constructor' to avoid having them loaded when not needed
 el_2018_data =        lambda: attoAOD_ttw_el()
+el_2018_egammaA =     lambda: attoAOD_ttw_el()
+el_2018_egammaB =     lambda: attoAOD_ttw_el()
+el_2018_egammaC =     lambda: attoAOD_ttw_el()
+el_2018_egammaD =     lambda: attoAOD_ttw_el()
 el_2018_ttjets =      lambda: attoAOD_ttw_el(mctype="20")
 el_2018_wjetstolnu =  lambda: attoAOD_ttw_el(mctype="21")
 el_2018_dyjetstoll =  lambda: attoAOD_ttw_el(mctype="22")

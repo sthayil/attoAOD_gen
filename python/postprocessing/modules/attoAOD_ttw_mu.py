@@ -104,6 +104,10 @@ class attoAOD_ttw_mu(Module):
 
 # define modules using the syntax 'name = lambda : constructor' to avoid having them loaded when not needed
 mu_2018_data =        lambda: attoAOD_ttw_mu()
+mu_2018_singlemuonA = lambda: attoAOD_ttw_mu()
+mu_2018_singlemuonB = lambda: attoAOD_ttw_mu()
+mu_2018_singlemuonC = lambda: attoAOD_ttw_mu()
+mu_2018_singlemuonD = lambda: attoAOD_ttw_mu()
 mu_2018_ttjets =      lambda: attoAOD_ttw_mu(mctype="20")
 mu_2018_wjetstolnu =  lambda: attoAOD_ttw_mu(mctype="21")
 mu_2018_dyjetstoll =  lambda: attoAOD_ttw_mu(mctype="22")
