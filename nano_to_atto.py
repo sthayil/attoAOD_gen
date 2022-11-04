@@ -54,7 +54,41 @@ if ops.mode=='hadd':
         else:
             print "ERROR: Output directory is not an EOS path starting in /store/user/"
             exit()
-    else: print "adapt for hexcms"
+    elif "hexcms" in hostname: 
+        if os.path.isdir(ops.outputDirectory+'/'+jobname):
+            os.system('ls '+ops.outputDirectory+'/'+jobname+' > haddfilelist')
+            with open('haddfilelist', 'r+') as in_file:
+                rootFiles=[]
+                totEntrFiles=[]
+                for count, line in enumerate(in_file):
+                    if ".root" in line: rootFiles.append(line.rstrip('\n'))
+                    elif ".txt" in line: totEntrFiles.append(line.rstrip('\n'))
+                if len(rootFiles)!=len(totEntrFiles): 
+                    print "#root files != #totentries files; check what's going on"
+                    exit()
+
+                os.system('rm haddfilelist')
+                os.chdir(jobname)
+
+                command='python ../scripts/haddnano.py '+jobname+'.root '
+                for rootFile in rootFiles: 
+                    #os.system('xrdcp -s root://cmsxrootd.fnal.gov/'+ops.outputDirectory+'/'+jobname+'/'+rootFile+' .')
+                    command+=ops.outputDirectory+'/'+jobname+'/'+rootFile+' '
+                os.system(command)
+                os.system('mv '+jobname+'.root ../'+ops.haddDir)
+                #for rootFile in rootFiles: os.system('rm '+rootFile)
+                tottotEntries=0
+                for totEntrFile in totEntrFiles: 
+                    #os.system('xrdcp -s root://cmsxrootd.fnal.gov/'+ops.outputDirectory+'/'+jobname+'/'+totEntrFile+' .')
+                    with open(ops.outputDirectory+'/'+jobname+'/'+totEntrFile, 'r') as in_file: 
+                        dataline=in_file.readline()
+                        tottotEntries+=int(dataline)
+                    #os.system('rm '+totEntrFile)
+                print "\n\n"+str(tottotEntries)
+                with open('../'+ops.haddDir+'/'+jobname+'_totentries.txt', 'w') as entriesfile:
+                    entriesfile.write(str(tottotEntries))
+        else:
+            print "ERROR: Output directory: "+ops.outputDirectory+'/'+jobname+" is not a valid path"
     exit()
 
 #directory with log files--------------------------------------------------------------------
