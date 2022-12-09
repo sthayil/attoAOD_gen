@@ -16,9 +16,10 @@ from datetime import datetime
 #220929: added attoversion branch, changed mctype def to add wjets
 #221007: require that events pass trigger to be saved into atto (to reduce filesizes)
 #221013: split el and mu modules
+#221209: undo trig req
 
 class attoAOD_ttw_mu(Module):
-    def __init__(self, year="2018", mctype="0", attoVersion="221013"): 
+    def __init__(self, year="2018", mctype="0", attoVersion="221209"): 
         self.year = year
         self.mctype = mctype
         self.attoVersion = attoVersion
@@ -75,7 +76,7 @@ class attoAOD_ttw_mu(Module):
             self.out.fillBranch("passTrigger", True)
         else: 
             self.out.fillBranch("passTrigger", False)
-            return False #temporary
+            #return False #temporary
 
         #event selection
         goodTwoprong=False
