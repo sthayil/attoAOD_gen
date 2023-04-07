@@ -24,3 +24,4 @@ keep attoVersion
 keep Electron*
 keep HLT_Ele50_CaloIdVT_GsfTrkIdT_PFJet165
 keep HLT_Photon200
+keep *Weight*
