@@ -19,9 +19,10 @@ from datetime import datetime
 #221013: split el and mu modules
 #221209: undo trig req
 #230227: undo all selections (no twoprong, lep or trig)
+#230410: redo all selections (twoprong, lep and trig)
 
 class attoAOD_ttw_mu(Module):
-    def __init__(self, year="2018", mctype="0", attoVersion="230227"): 
+    def __init__(self, year="2018", mctype="0", attoVersion="230410"): 
         self.year = year
         self.mctype = mctype
         self.attoVersion = attoVersion
@@ -78,24 +79,24 @@ class attoAOD_ttw_mu(Module):
             self.out.fillBranch("passTrigger", True)
         else: 
             self.out.fillBranch("passTrigger", False)
-            #return False #temporary
+            return False #temporary
 
         #event selection
-        # goodTwoprong=False
-        # if len(twoprongs)<1: return False
-        # for twoprong in twoprongs:
-        #     if twoprong.pt>20 and abs(twoprong.eta)<2.5: 
-        #         goodTwoprong=True
-        #         break
-        # if goodTwoprong==False: return False
+        goodTwoprong=False
+        if len(twoprongs)<1: return False
+        for twoprong in twoprongs:
+            if twoprong.pt>20 and abs(twoprong.eta)<2.5: 
+                goodTwoprong=True
+                break
+        if goodTwoprong==False: return False
 
-        # goodMuon=False
-        # if len(muons)<1: return False
-        # for muon in muons:
-        #     if muon.pt>52 and abs(muon.eta)<2.4: 
-        #         goodMuon = True
-        #         break
-        # if goodMuon==False: return False
+        goodMuon=False
+        if len(muons)<1: return False
+        for muon in muons:
+            if muon.pt>52 and abs(muon.eta)<2.4: 
+                goodMuon = True
+                break
+        if goodMuon==False: return False
 
         #fill branches
         self.out.fillBranch("year", int(self.year))
