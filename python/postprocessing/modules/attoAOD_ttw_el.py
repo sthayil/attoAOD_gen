@@ -16,9 +16,10 @@ from datetime import datetime
 #220929: added attoversion branch, changed mctype def to add wjets
 #221007: require that events pass trigger to be saved into atto (to reduce filesizes)
 #221013: split el and mu modules
+#230412: include signal MCs in options
 
 class attoAOD_ttw_el(Module):
-    def __init__(self, year="2018", mctype="0", attoVersion="221013"): 
+    def __init__(self, year="2018", mctype="0", attoVersion="230412"): 
         self.year = year
         self.mctype = mctype
         self.attoVersion = attoVersion
@@ -111,3 +112,6 @@ el_2018_egammaD =     lambda: attoAOD_ttw_el()
 el_2018_ttjets =      lambda: attoAOD_ttw_el(mctype="20")
 el_2018_wjetstolnu =  lambda: attoAOD_ttw_el(mctype="21")
 el_2018_dyjetstoll =  lambda: attoAOD_ttw_el(mctype="22")
+el_2018_sig_M-1000 =  lambda: attoAOD_ttw_el(mctype="11")
+el_2018_sig_M-500  =  lambda: attoAOD_ttw_el(mctype="12")
+el_2018_sig_M-250  =  lambda: attoAOD_ttw_el(mctype="13")

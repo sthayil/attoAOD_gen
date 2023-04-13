@@ -20,9 +20,10 @@ from datetime import datetime
 #221209: undo trig req
 #230227: undo all selections (no twoprong, lep or trig)
 #230410: redo all selections (twoprong, lep and trig)
+#230412: include signal MCs in options
 
 class attoAOD_ttw_mu(Module):
-    def __init__(self, year="2018", mctype="0", attoVersion="230410"): 
+    def __init__(self, year="2018", mctype="0", attoVersion="230412"): 
         self.year = year
         self.mctype = mctype
         self.attoVersion = attoVersion
@@ -115,3 +116,6 @@ mu_2018_singlemuonD = lambda: attoAOD_ttw_mu()
 mu_2018_ttjets =      lambda: attoAOD_ttw_mu(mctype="20")
 mu_2018_wjetstolnu =  lambda: attoAOD_ttw_mu(mctype="21")
 mu_2018_dyjetstoll =  lambda: attoAOD_ttw_mu(mctype="22")
+mu_2018_sig_M-1000 =  lambda: attoAOD_ttw_mu(mctype="11")
+mu_2018_sig_M-500  =  lambda: attoAOD_ttw_mu(mctype="12")
+mu_2018_sig_M-250  =  lambda: attoAOD_ttw_mu(mctype="13")
