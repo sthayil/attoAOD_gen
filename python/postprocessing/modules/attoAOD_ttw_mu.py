@@ -23,7 +23,7 @@ from datetime import datetime
 #230412: include signal MCs in options
 
 class attoAOD_ttw_mu(Module):
-    def __init__(self, year="2018", mctype="0", attoVersion="230412"): 
+    def __init__(self, year="2018", mctype="0", attoVersion="230227"): 
         self.year = year
         self.mctype = mctype
         self.attoVersion = attoVersion
@@ -80,24 +80,24 @@ class attoAOD_ttw_mu(Module):
             self.out.fillBranch("passTrigger", True)
         else: 
             self.out.fillBranch("passTrigger", False)
-            return False #temporary
+            #return False #temporary
 
-        #event selection
-        goodTwoprong=False
-        if len(twoprongs)<1: return False
-        for twoprong in twoprongs:
-            if twoprong.pt>20 and abs(twoprong.eta)<2.5: 
-                goodTwoprong=True
-                break
-        if goodTwoprong==False: return False
+        # #event selection
+        # goodTwoprong=False
+        # if len(twoprongs)<1: return False
+        # for twoprong in twoprongs:
+        #     if twoprong.pt>20 and abs(twoprong.eta)<2.5: 
+        #         goodTwoprong=True
+        #         break
+        # if goodTwoprong==False: return False
 
-        goodMuon=False
-        if len(muons)<1: return False
-        for muon in muons:
-            if muon.pt>52 and abs(muon.eta)<2.4: 
-                goodMuon = True
-                break
-        if goodMuon==False: return False
+        # goodMuon=False
+        # if len(muons)<1: return False
+        # for muon in muons:
+        #     if muon.pt>52 and abs(muon.eta)<2.4: 
+        #         goodMuon = True
+        #         break
+        # if goodMuon==False: return False
 
         #fill branches
         self.out.fillBranch("year", int(self.year))
