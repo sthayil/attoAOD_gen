@@ -6,10 +6,14 @@ import math
 import os, glob, sys, argparse, socket
 from datetime import datetime
 
-#0: Data: /SingleMuon/Run2018B-UL2018_MiniAODv2-v2/MINIAOD
-#11:/eos/uscms/store/user/lpcrutgers/sthayil/pseudoaxions/nano/ttPhiPS_M-1000/
-#12:/eos/uscms/store/user/lpcrutgers/sthayil/pseudoaxions/nano/ttPhiPS_M-500/
-#13:/eos/uscms/store/user/lpcrutgers/sthayil/pseudoaxions/nano/ttPhiPS_M-250/
+#0:  //EGamma/Run2018*-UL2018_MiniAODv2-v*/MINIAOD
+#11: /eos/uscms/store/user/lpcrutgers/sthayil/pseudoaxions/nano/ttPhiPS_M-1000/
+#12: /eos/uscms/store/user/lpcrutgers/sthayil/pseudoaxions/nano/ttPhiPS_M-500/
+#13: /eos/uscms/store/user/lpcrutgers/sthayil/pseudoaxions/nano/ttPhiPS_M-250/
+#14: /eos/uscms/store/user/lpcrutgers/sthayil/pseudoaxions/nano/ttPhiPS_M-4000/2023-04-24-11-00-18/fv1p5-9-5ce1_bv1p2-0-1531/
+#15: /eos/uscms/store/user/lpcrutgers/sthayil/pseudoaxions/nano/ttPhiPS_M-2000/2023-04-24-10-59-20/fv1p5-9-5ce1_bv1p2-0-1531/
+#16: /eos/uscms/store/user/lpcrutgers/sthayil/pseudoaxions/nano/ttPhiPS_M-750/2023-04-24-11-00-43/fv1p5-9-5ce1_bv1p2-0-1531/
+#20: /TTJets_TuneCP5_13TeV-madgraphMLM-pythia8/RunIISummer20UL18MiniAODv2-106X_upgrade2018_realistic_v16_L1v1-v2/MINIAODSIM
 #21: /WJetsToLNu_TuneCP5_13TeV-madgraphMLM-pythia8/RunIISummer20UL18MiniAODv2-106X_upgrade2018_realistic_v16_L1v1-v1/MINIAODSIM  
 #22: /DYJetsToLL_M-50_TuneCP5_13TeV-amcatnloFXFX-pythia8/RunIISummer20UL18MiniAODv2-106X_upgrade2018_realistic_v16_L1v1-v2/MINIAODSIM
 
@@ -115,3 +119,6 @@ el_2018_dyjetstoll =  lambda: attoAOD_ttw_el(mctype="22")
 el_2018_sig_M1000 =  lambda: attoAOD_ttw_el(mctype="11")
 el_2018_sig_M500  =  lambda: attoAOD_ttw_el(mctype="12")
 el_2018_sig_M250  =  lambda: attoAOD_ttw_el(mctype="13")
+el_2018_sig_M4000 =  lambda: attoAOD_ttw_el(mctype="14")
+el_2018_sig_M2000  = lambda: attoAOD_ttw_el(mctype="15")
+el_2018_sig_M750  =  lambda: attoAOD_ttw_el(mctype="16")

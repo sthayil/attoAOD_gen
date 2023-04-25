@@ -6,11 +6,14 @@ import math
 import os, glob, sys, argparse, socket
 from datetime import datetime
 
-#0: /SingleMuon/Run2018B-UL2018_MiniAODv2-v2/MINIAOD
-#11:/eos/uscms/store/user/lpcrutgers/sthayil/pseudoaxions/nano/ttPhiPS_M-1000/
-#12:/eos/uscms/store/user/lpcrutgers/sthayil/pseudoaxions/nano/ttPhiPS_M-500/
-#13:/eos/uscms/store/user/lpcrutgers/sthayil/pseudoaxions/nano/ttPhiPS_M-250/
-#21: /TTJets_TuneCP5_13TeV-madgraphMLM-pythia8/RunIISummer20UL18MiniAODv2-106X_upgrade2018_realistic_v16_L1v1-v2/MINIAODSIM
+#0:  /SingleMuon/Run2018*-UL2018_MiniAODv2-v*/MINIAOD
+#11: /eos/uscms/store/user/lpcrutgers/sthayil/pseudoaxions/nano/ttPhiPS_M-1000/
+#12: /eos/uscms/store/user/lpcrutgers/sthayil/pseudoaxions/nano/ttPhiPS_M-500/
+#13: /eos/uscms/store/user/lpcrutgers/sthayil/pseudoaxions/nano/ttPhiPS_M-250/
+#14: /eos/uscms/store/user/lpcrutgers/sthayil/pseudoaxions/nano/ttPhiPS_M-4000/2023-04-24-11-00-18/fv1p5-9-5ce1_bv1p2-0-1531/
+#15: /eos/uscms/store/user/lpcrutgers/sthayil/pseudoaxions/nano/ttPhiPS_M-2000/2023-04-24-10-59-20/fv1p5-9-5ce1_bv1p2-0-1531/
+#16: /eos/uscms/store/user/lpcrutgers/sthayil/pseudoaxions/nano/ttPhiPS_M-750/2023-04-24-11-00-43/fv1p5-9-5ce1_bv1p2-0-1531/
+#20: /TTJets_TuneCP5_13TeV-madgraphMLM-pythia8/RunIISummer20UL18MiniAODv2-106X_upgrade2018_realistic_v16_L1v1-v2/MINIAODSIM
 #21: /WJetsToLNu_TuneCP5_13TeV-madgraphMLM-pythia8/RunIISummer20UL18MiniAODv2-106X_upgrade2018_realistic_v16_L1v1-v1/MINIAODSIM  
 #22: /DYJetsToLL_M-50_TuneCP5_13TeV-amcatnloFXFX-pythia8/RunIISummer20UL18MiniAODv2-106X_upgrade2018_realistic_v16_L1v1-v2/MINIAODSIM
 
@@ -23,7 +26,7 @@ from datetime import datetime
 #230412: include signal MCs in options
 
 class attoAOD_ttw_mu(Module):
-    def __init__(self, year="2018", mctype="0", attoVersion="230227"): 
+    def __init__(self, year="2018", mctype="0", attoVersion="230412"): 
         self.year = year
         self.mctype = mctype
         self.attoVersion = attoVersion
@@ -80,24 +83,24 @@ class attoAOD_ttw_mu(Module):
             self.out.fillBranch("passTrigger", True)
         else: 
             self.out.fillBranch("passTrigger", False)
-            #return False #temporary
+            return False #temporary
 
-        # #event selection
-        # goodTwoprong=False
-        # if len(twoprongs)<1: return False
-        # for twoprong in twoprongs:
-        #     if twoprong.pt>20 and abs(twoprong.eta)<2.5: 
-        #         goodTwoprong=True
-        #         break
-        # if goodTwoprong==False: return False
+        #event selection
+        goodTwoprong=False
+        if len(twoprongs)<1: return False
+        for twoprong in twoprongs:
+            if twoprong.pt>20 and abs(twoprong.eta)<2.5: 
+                goodTwoprong=True
+                break
+        if goodTwoprong==False: return False
 
-        # goodMuon=False
-        # if len(muons)<1: return False
-        # for muon in muons:
-        #     if muon.pt>52 and abs(muon.eta)<2.4: 
-        #         goodMuon = True
-        #         break
-        # if goodMuon==False: return False
+        goodMuon=False
+        if len(muons)<1: return False
+        for muon in muons:
+            if muon.pt>52 and abs(muon.eta)<2.4: 
+                goodMuon = True
+                break
+        if goodMuon==False: return False
 
         #fill branches
         self.out.fillBranch("year", int(self.year))
@@ -119,3 +122,6 @@ mu_2018_dyjetstoll =  lambda: attoAOD_ttw_mu(mctype="22")
 mu_2018_sig_M1000 =  lambda: attoAOD_ttw_mu(mctype="11")
 mu_2018_sig_M500  =  lambda: attoAOD_ttw_mu(mctype="12")
 mu_2018_sig_M250  =  lambda: attoAOD_ttw_mu(mctype="13")
+mu_2018_sig_M4000 =  lambda: attoAOD_ttw_mu(mctype="14")
+mu_2018_sig_M2000  = lambda: attoAOD_ttw_mu(mctype="15")
+mu_2018_sig_M750  =  lambda: attoAOD_ttw_mu(mctype="16")
