@@ -6,6 +6,7 @@ keep Jet_eta
 keep Jet_m*
 keep Jet_n*
 keep Jet_p*
+keep Jet_hadronFlavour
 keep GenVisTau*
 keep Tau_genPart*
 keep Tau_pt
