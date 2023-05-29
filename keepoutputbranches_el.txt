@@ -7,7 +7,7 @@ keep Jet_m*
 keep Jet_n*
 keep Jet_p*
 keep Jet_hadronFlavour
-keep GenPart*
+keep GenOmega*
 keep GenVisTau*
 keep Tau_genPart*
 keep Tau_pt
@@ -23,7 +23,7 @@ keep year
 keep mcType
 keep passTrigger
 keep attoVersion
+keep *Weight*
 keep Electron*
 keep HLT_Ele50_CaloIdVT_GsfTrkIdT_PFJet165
 keep HLT_Photon200
-keep *Weight*

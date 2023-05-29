@@ -23,10 +23,13 @@ from datetime import datetime
 #221209: undo trig req
 #230227: undo all selections (no twoprong, lep or trig)
 #230410: redo all selections (twoprong, lep and trig)
-#230412: include signal MCs in options
+#230412: include signal MCs in options [with all selections (twoprong, lep and trig)]
+#230529: introduce 'selections' boolean
+
+selections=False
 
 class attoAOD_ttw_mu(Module):
-    def __init__(self, year="2018", mctype="0", attoVersion="230412"): 
+    def __init__(self, year="2018", mctype="0", attoVersion="230529"): 
         self.year = year
         self.mctype = mctype
         self.attoVersion = attoVersion
@@ -83,24 +86,25 @@ class attoAOD_ttw_mu(Module):
             self.out.fillBranch("passTrigger", True)
         else: 
             self.out.fillBranch("passTrigger", False)
-            return False #temporary
+            if selections: return False
 
         #event selection
-        goodTwoprong=False
-        if len(twoprongs)<1: return False
-        for twoprong in twoprongs:
-            if twoprong.pt>20 and abs(twoprong.eta)<2.5: 
-                goodTwoprong=True
-                break
-        if goodTwoprong==False: return False
+        if selections:
+            goodTwoprong=False
+            if len(twoprongs)<1: return False
+            for twoprong in twoprongs:
+                if twoprong.pt>20 and abs(twoprong.eta)<2.5: 
+                    goodTwoprong=True
+                    break
+            if goodTwoprong==False: return False
 
-        goodMuon=False
-        if len(muons)<1: return False
-        for muon in muons:
-            if muon.pt>52 and abs(muon.eta)<2.4: 
-                goodMuon = True
-                break
-        if goodMuon==False: return False
+            goodMuon=False
+            if len(muons)<1: return False
+            for muon in muons:
+                if muon.pt>52 and abs(muon.eta)<2.4: 
+                    goodMuon = True
+                    break
+            if goodMuon==False: return False
 
         #fill branches
         self.out.fillBranch("year", int(self.year))

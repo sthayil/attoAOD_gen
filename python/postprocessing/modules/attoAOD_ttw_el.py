@@ -20,10 +20,13 @@ from datetime import datetime
 #220929: added attoversion branch, changed mctype def to add wjets
 #221007: require that events pass trigger to be saved into atto (to reduce filesizes)
 #221013: split el and mu modules
-#230412: include signal MCs in options
+#230412: include signal MCs in options [with all selections (twoprong, lep and trig)]
+#230529: introduce 'selections' boolean
+
+selections=False
 
 class attoAOD_ttw_el(Module):
-    def __init__(self, year="2018", mctype="0", attoVersion="230412"): 
+    def __init__(self, year="2018", mctype="0", attoVersion="230529"): 
         self.year = year
         self.mctype = mctype
         self.attoVersion = attoVersion
@@ -80,24 +83,25 @@ class attoAOD_ttw_el(Module):
             self.out.fillBranch("passTrigger", True)
         else: 
             self.out.fillBranch("passTrigger", False)
-            return False #temporary
+            if selections: return False 
 
         #event selection
-        goodTwoprong=False
-        if len(twoprongs)<1: return False
-        for twoprong in twoprongs:
-            if twoprong.pt>20 and abs(twoprong.eta)<2.5: 
-                goodTwoprong=True
-                break
-        if goodTwoprong==False: return False
+        if selections:
+            goodTwoprong=False
+            if len(twoprongs)<1: return False
+            for twoprong in twoprongs:
+                if twoprong.pt>20 and abs(twoprong.eta)<2.5: 
+                    goodTwoprong=True
+                    break
+            if goodTwoprong==False: return False
 
-        goodElectron=False
-        if len(electrons)<1: return False
-        for electron in electrons:
-            if electron.pt>52 and abs(electron.eta)<2.5: 
-                goodElectron = True
-                break
-        if goodElectron==False: return False
+            goodElectron=False
+            if len(electrons)<1: return False
+            for electron in electrons:
+                if electron.pt>52 and abs(electron.eta)<2.5: 
+                    goodElectron = True
+                    break
+            if goodElectron==False: return False
 
         #fill branches
         self.out.fillBranch("year", int(self.year))

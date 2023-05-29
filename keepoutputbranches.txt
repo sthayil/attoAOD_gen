@@ -24,7 +24,4 @@ keep mcType
 keep passTrigger
 keep attoVersion
 keep *Weight*
-keep Muon*
-keep HLT_Mu50
-keep HLT_OldMu100
-keep HLT_TkMu100
+
