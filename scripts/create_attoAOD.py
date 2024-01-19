@@ -118,6 +118,7 @@ if __name__ == "__main__":
         OutputFile = FileList.split("/")[-1]
         OutputFile = OutputFile.split(".")[0]
         OutputFile = str(Batch)+"_"+options.lepton+"_"+ OutputFile + ".root"
+        print(OutputFile)
 
     p = PostProcessor(".", read_file_list(FileList, options.MaxFiles, Batch),
                       cut=options.cut,
