@@ -23,7 +23,7 @@ from datetime import datetime
 #230412: include signal MCs in options [with all selections (twoprong, lep and trig)]
 #230529: introduce 'selections' boolean
 
-selections=True
+selections=False
 
 class attoAOD_ttw_el(Module):
     def __init__(self, year="2018", mctype="0", attoVersion="230529"): 
