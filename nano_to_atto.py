@@ -14,7 +14,7 @@ ops = options.parse_args()
 #hadd mode--------------------------------------------------------------------------------
 if ops.mode=='hadd':
     if not os.path.isdir(ops.haddDir): 
-        print "Making job directory "+ops.haddDir
+        print ("Making job directory "+ops.haddDir)
         os.system('mkdir '+ops.haddDir)
     hostname = socket.gethostname()
     jobname = ops.lepton+'_'+ops.dataset+'_'+ops.year
@@ -28,7 +28,7 @@ if ops.mode=='hadd':
                     if ".root" in line: rootFiles.append(line.rstrip('\n'))
                     elif ".txt" in line: totEntrFiles.append(line.rstrip('\n'))
                 if len(rootFiles)!=len(totEntrFiles): 
-                    print "#root files != #totentries files; check what's going on"
+                    print ("#root files != #totentries files; check what's going on")
                     exit()
 
                 os.system('rm haddfilelist')
@@ -48,11 +48,11 @@ if ops.mode=='hadd':
                         dataline=in_file.readline()
                         tottotEntries+=int(dataline)
                     os.system('rm '+totEntrFile)
-                print "\n\n"+str(tottotEntries)
+                print ("\n\n"+str(tottotEntries))
                 with open('../'+ops.haddDir+'/'+jobname+'_totentries.txt', 'w') as entriesfile:
                     entriesfile.write(str(tottotEntries))
         else:
-            print "ERROR: Output directory is not an EOS path starting in /store/user/"
+            print ("ERROR: Output directory is not an EOS path starting in /store/user/")
             exit()
     elif "hexcms" in hostname: 
         if os.path.isdir(ops.outputDirectory+'/'+jobname):
@@ -64,7 +64,7 @@ if ops.mode=='hadd':
                     if ".root" in line: rootFiles.append(line.rstrip('\n'))
                     elif ".txt" in line: totEntrFiles.append(line.rstrip('\n'))
                 if len(rootFiles)!=len(totEntrFiles): 
-                    print "#root files != #totentries files; check what's going on"
+                    print ("#root files != #totentries files; check what's going on")
                     exit()
 
                 os.system('rm haddfilelist')
@@ -84,17 +84,17 @@ if ops.mode=='hadd':
                         dataline=in_file.readline()
                         tottotEntries+=int(dataline)
                     #os.system('rm '+totEntrFile)
-                print "\n\n"+str(tottotEntries)
+                print ("\n\n"+str(tottotEntries))
                 with open('../'+ops.haddDir+'/'+jobname+'_totentries.txt', 'w') as entriesfile:
                     entriesfile.write(str(tottotEntries))
         else:
-            print "ERROR: Output directory: "+ops.outputDirectory+'/'+jobname+" is not a valid path"
+            print ("ERROR: Output directory: "+ops.outputDirectory+'/'+jobname+" is not a valid path")
     exit()
 
 #directory with log files--------------------------------------------------------------------
 jobname = ops.lepton+'_'+ops.dataset+'_'+ops.year
 if not os.path.isdir(jobname): 
-    print "Making job directory "+jobname
+    print ("Making job directory "+jobname)
     os.system('mkdir '+jobname)
 
 #directory (eos area) with attoAODs----------------------------------------------------------
@@ -107,36 +107,36 @@ if ".fnal.gov" in hostname:
     #     os.system('eos root://cmseos.fnal.gov mkdir -p '+ops.outputDirectory+'/'+jobname)
     else:
         #print "ERROR: for output directory, specify an EOS path starting in /store/user/ or /eos/uscms/store/user/"
-        print "ERROR: for output directory, specify an EOS path starting in /store/user/"
+        print ("ERROR: for output directory, specify an EOS path starting in /store/user/")
         exit()
     prefix="root://cmseos.fnal.gov/"
 elif "hexcms" in hostname: 
     if os.path.isdir(ops.outputDirectory):
         if not ( (ops.outputDirectory).startswith("/") ): prefix=os.getcwd()+"/" #for hex, don't care about eos area, can save ouput locally
     else:
-        print "provided output directory does not exist, trying to create..."
+        print( "provided output directory does not exist, trying to create...")
         if not ( (ops.outputDirectory).startswith("/") ): prefix=os.getcwd()+"/"
         os.system('mkdir -p '+ops.outputDirectory)
-        print "created directory: "+prefix+ops.outputDirectory
+        print( "created directory: "+prefix+ops.outputDirectory)
     if os.path.isdir(ops.outputDirectory+'/'+jobname): 
-        print "WARNING: directory named "+ops.outputDirectory+'/'+jobname+" already exists, files will be overwritten"
+        print( "WARNING: directory named "+ops.outputDirectory+'/'+jobname+" already exists, files will be overwritten")
     else: os.system('mkdir -p '+ops.outputDirectory+'/'+jobname)
 outputDir=prefix+ops.outputDirectory+'/'+jobname
 
 #check accessibility of filelists-----------------------------------------------------------
 filelist = 'filelists/'+ops.dataset+'_'+ops.year+'.txt' 
 if not os.path.exists(filelist): 
-    print "Check that your filelist exists (format: filelists/dataset_year.txt)"
+    print( "Check that your filelist exists (format: filelists/dataset_year.txt)")
     exit
 f = open(filelist, "r")
 flines = f.readlines()
 f.close()
 
-if ".fnal.gov" in hostname and not (flines[0].startswith('/store/user/')): print "Filelist items don't start in /store/user/; first item is: "+flines[0]
-elif "hexcms" in hostname and not (flines[0].startswith('/cms/')): print "Filelist items don't start in /cms/; first item is: "+flines[0]
+if ".fnal.gov" in hostname and not (flines[0].startswith('/store/user/')): print( "Filelist items don't start in /store/user/; first item is: "+flines[0])
+elif "hexcms" in hostname and not (flines[0].startswith('/cms/')): print( "Filelist items don't start in /cms/; first item is: "+flines[0])
 
 #print #files/job, cd to jobdir, calculate num jobs------------------------------------------
-print "Each job will run over up to "+str(ops.numFiles)+" NanoAODs"
+print( "Each job will run over up to "+str(ops.numFiles)+" NanoAODs")
 
 os.chdir(jobname)
 if not os.path.isdir('logs'): os.system('mkdir logs')
@@ -160,7 +160,7 @@ with open('condorsubmit_lhetominiaod_'+mytimestr+'.jdl', 'w') as file:
     
 #submit jobs-------------------------------------------------------------------------------
 os.system('cp ../condorsubmit_nanotoatto.sh .')
-print "Submitting jobs with condor_submit condorsubmit_nanotoatto_"+mytimestr+".jdl ..."
+print ("Submitting jobs with condor_submit condorsubmit_nanotoatto_"+mytimestr+".jdl ...")
 os.system('condor_submit condorsubmit_lhetominiaod_'+mytimestr+'.jdl')
 os.system('mv condorsubmit_lhetominiaod_'+mytimestr+'.jdl jdl_files/')
 
