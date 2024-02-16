@@ -26,11 +26,12 @@ from datetime import datetime
 #230412: include signal MCs in options [with all selections (twoprong, lep and trig)]
 #230529: introduce 'selections' boolean
 #240215: change triggers to accomodate 2017, 2016 mu
+#240216: accomodate 2017 singlemuonB spl trigger reqs + add highptid req to goodmuon
 
 selections=True #req twoprong, basic lep, pass trig
 
 class attoAOD_ttw_mu(Module):
-    def __init__(self, year="2018", mctype="0", attoVersion="240215"): 
+    def __init__(self, year="2018", mctype="0", attoVersion="240216"): 
         self.year = year
         self.mctype = mctype
         self.attoVersion = attoVersion
@@ -83,8 +84,13 @@ class attoAOD_ttw_mu(Module):
                 return False
 
         #trigger
-        if (self.year=="2018" or self.year=="2017") and (trigger.Mu50 or trigger.OldMu100 or trigger.TkMu100): 
-            self.out.fillBranch("passTrigger", True)
+        if (self.year=="2018" or self.year=="2017"):
+            if hasattr(event, "HLT_OldMu100"):
+                if (trigger.Mu50 or trigger.OldMu100 or trigger.TkMu100): 
+                    self.out.fillBranch("passTrigger", True)
+            else:
+                if (trigger.Mu50):
+                    self.out.fillBranch("passTrigger", True)
         elif self.year=="2016" and (trigger.Mu50 or trigger.TkMu50): 
             self.out.fillBranch("passTrigger", True)
         else: 
@@ -104,7 +110,7 @@ class attoAOD_ttw_mu(Module):
             goodMuon=False
             if len(muons)<1: return False
             for muon in muons:
-                if muon.pt>52 and abs(muon.eta)<2.4: 
+                if muon.pt>52 and abs(muon.eta)<2.4 and muon.highPtId==2: 
                     goodMuon = True
                     break
             if goodMuon==False: return False
