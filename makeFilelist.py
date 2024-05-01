@@ -1,6 +1,6 @@
 import sys, os, socket
 
-#usage: python makeFilelist.py /eos/uscms/store/user/lpcrutgers/sthayil/pseudoaxions/ttPhiPS_M-250/ eosdirtocheck nameofexpectedfilelist
+#usage: python makeFilelist.py /store/user/lpcrutgers/sthayil/pseudoaxions/ttPhiPS_M-250/ eosdirtocheck nameofexpectedfilelist
 hostname = socket.gethostname()
 filepath = sys.argv[1] 
 if ".fnal.gov" in hostname: 
