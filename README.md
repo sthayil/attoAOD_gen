@@ -1,3 +1,20 @@
+Examples to run atto_gen:
+
+On lpc: ```sthayil@cmslpc101 NanoAODTools$ python nano_to_atto.py -l mu -y 2017 -d singlemuonF -o /store/user/lpcrutgers/sthayil/pseudoaxions/atto_passTrigger```
+On hex: ```thayil@hexcms NanoAODTools$ python nano_to_atto.py -l mu -y 2017 -d singlemuonB -o /cms/twoprong/thayil/pseudoaxions/atto_passTrigger```
+
+Uses filelists/, make sure these are up to date by doing for eg:
+
+On lpc: ```python makeFilelist.py /store/user/lpcrutgers/sthayil/pseudoaxions/nano/singlemuonE_2017_04-24/2024-04-07-16-55-55/fv1p7-0-292f_bv1p5-3-4392/ filelists/singlemuonF_2017.txt```
+On hex: ```python makeFilelist.py /cms/twoprong/thayil/nano/singlemuonB_2017_03-24/2024-03-06-12-14-15/fv1p6-18-683e_bv1p4-27-4dc9/ filelists/singlemuonB_2017.txt```
+
+To hadd files, use hadd mode:
+
+On lpc: ```python nano_to_atto.py -l mu -y 2017 -m hadd -d wjetstolnu -o /store/user/lpcrutgers/sthayil/pseudoaxions/atto_passTrigger -hd hadded/atto_passTrigger/```
+On hex: ```python nano_to_atto.py -l mu -y 2017 -m hadd -d wjetstolnu -o /cms/twoprong/thayil/pseudoaxions/atto_passTrigger -hd hadded/atto_passTrigger/```
+
+--------------------------------------------------------------------------------------
+
 # nanoAOD-tools
 Tools for working with NanoAOD (requiring only python + root, not CMSSW)
 
