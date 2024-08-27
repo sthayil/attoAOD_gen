@@ -1,4 +1,4 @@
-+DesiredOS = SL7
++DesiredOS ="SL7"
 universe = vanilla
 initialdir = .
 #use_x509userproxy = true
