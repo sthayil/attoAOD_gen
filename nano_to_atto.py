@@ -13,12 +13,13 @@ ops = options.parse_args()
 
 #hadd mode--------------------------------------------------------------------------------
 if ops.mode=='hadd':
-    if not os.path.isdir(ops.haddDir): 
-        print ("Making job directory "+ops.haddDir)
-        os.system('mkdir '+ops.haddDir)
     hostname = socket.gethostname()
     jobname = ops.lepton+'_'+ops.dataset+'_'+ops.year
     if ".fnal.gov" in hostname:
+        # if not os.path.isdir(ops.haddDir): 
+        #     print ("Making job directory "+ops.haddDir)
+        #     os.system('mkdir '+ops.haddDir)
+
         if (ops.outputDirectory).startswith("/store/user/"):
             os.system('eos root://cmseos.fnal.gov ls '+ops.outputDirectory+'/'+jobname+' > haddfilelist')
             with open('haddfilelist', 'r+') as in_file:
@@ -31,30 +32,52 @@ if ops.mode=='hadd':
                     print ("#root files != #totentries files; check what's going on")
                     exit()
 
-                os.system('rm haddfilelist')
-                os.chdir(jobname)
+                # os.chdir(jobname)
 
-                command='python ../scripts/haddnano.py '+jobname+'.root '
-                for rootFile in rootFiles: 
-                    os.system('xrdcp -s root://cmsxrootd.fnal.gov/'+ops.outputDirectory+'/'+jobname+'/'+rootFile+' .')
-                    command+=rootFile+' '
-                os.system(command)
-                os.system('mv '+jobname+'.root ../'+ops.haddDir)
-                for rootFile in rootFiles: os.system('rm '+rootFile)
+                #run as python nano_to_atto.py -l mu -y 2018 -m hadd -d singlemuonA -o /store/user/lpcrutgers/sthayil/pseudoaxions/atto_passTrigger -hd /store/user/lpcrutgers/sthayil/pseudoaxions/atto_hadded
+                if os.path.isfile('haddfilelist'):
+                    command='python scripts/haddnano.py /eos/uscms'+ops.haddDir+'/'+jobname+'.root '
+                    for rootFile in rootFiles:
+                        command+='/eos/uscms'+ops.outputDirectory+'/'+jobname+'/'+rootFile+' '
+                    print(command)                    
+                    os.system(command)
+                    os.system('rm haddfilelist')
+
+                # command='python ../scripts/haddnano.py '+jobname+'.root '
+                # for rootFile in rootFiles: 
+                #     os.system('xrdcp -s root://cmseos.fnal.gov/'+ops.outputDirectory+'/'+jobname+'/'+rootFile+' .')
+                #     command+=rootFile+' '
+                # os.system(command)
+                # os.system('mv '+jobname+'.root ../'+ops.haddDir)
+                # for rootFile in rootFiles: os.system('rm '+rootFile)
+
                 tottotEntries=0
+                print(totEntrFiles)
                 for totEntrFile in totEntrFiles: 
-                    os.system('xrdcp -s root://cmsxrootd.fnal.gov/'+ops.outputDirectory+'/'+jobname+'/'+totEntrFile+' .')
+                    os.system('xrdcp -s root://cmseos.fnal.gov/'+ops.outputDirectory+'/'+jobname+'/'+totEntrFile+' .')
                     with open(totEntrFile, 'r') as in_file: 
                         dataline=in_file.readline()
                         tottotEntries+=int(dataline)
                     os.system('rm '+totEntrFile)
-                print ("\n\n"+str(tottotEntries))
-                with open('../'+ops.haddDir+'/'+jobname+'_totentries.txt', 'w') as entriesfile:
+
+                with open(jobname+'_totentries.txt', 'w') as entriesfile:
                     entriesfile.write(str(tottotEntries))
+                #os.system('xrdcp '+jobname+'_totentries.txt root://cmseos.fnal.gov/'+ops.haddDir+'/'+jobname+'_totentries.txt')
+                #print('xrdcp '+jobname+'_totentries.txt root://cmseos.fnal.gov/'+ops.haddDir+'/'+jobname+'_totentries.txt')
+                #os.system('rm '+jobname+'_totentries.txt')
+
+                # with open('../'+ops.haddDir+'/'+jobname+'_totentries.txt', 'w') as entriesfile:
+                #     entriesfile.write(str(tottotEntries))
+                # os.system('rm haddfilelist')
+
         else:
             print ("ERROR: Output directory is not an EOS path starting in /store/user/")
             exit()
     elif "hexcms" in hostname: 
+        if not os.path.isdir(ops.haddDir): 
+            print ("Making job directory "+ops.haddDir)
+            os.system('mkdir '+ops.haddDir)
+
         if os.path.isdir(ops.outputDirectory+'/'+jobname):
             os.system('ls '+ops.outputDirectory+'/'+jobname+' > haddfilelist')
             with open('haddfilelist', 'r+') as in_file:
@@ -72,14 +95,14 @@ if ops.mode=='hadd':
 
                 command='python ../scripts/haddnano.py '+jobname+'.root '
                 for rootFile in rootFiles: 
-                    #os.system('xrdcp -s root://cmsxrootd.fnal.gov/'+ops.outputDirectory+'/'+jobname+'/'+rootFile+' .')
+                    #os.system('xrdcp -s root://cmseos.fnal.gov/'+ops.outputDirectory+'/'+jobname+'/'+rootFile+' .')
                     command+=ops.outputDirectory+'/'+jobname+'/'+rootFile+' '
                 os.system(command)
                 os.system('mv '+jobname+'.root ../'+ops.haddDir)
                 #for rootFile in rootFiles: os.system('rm '+rootFile)
                 tottotEntries=0
                 for totEntrFile in totEntrFiles: 
-                    #os.system('xrdcp -s root://cmsxrootd.fnal.gov/'+ops.outputDirectory+'/'+jobname+'/'+totEntrFile+' .')
+                    #os.system('xrdcp -s root://cmseos.fnal.gov/'+ops.outputDirectory+'/'+jobname+'/'+totEntrFile+' .')
                     with open(ops.outputDirectory+'/'+jobname+'/'+totEntrFile, 'r') as in_file: 
                         dataline=in_file.readline()
                         tottotEntries+=int(dataline)
