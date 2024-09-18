@@ -1,0 +1,10 @@
+/store/user/lpcrutgers/sthayil/pseudoaxions/nano/ttPhiPS_M-500_2016APV_09-24/2024-09-16-18-45-56/fv1p9-4-4dd7_bv1p0-2-fea4/NANOAOD_v1p0c2_0.root
+/store/user/lpcrutgers/sthayil/pseudoaxions/nano/ttPhiPS_M-500_2016APV_09-24/2024-09-16-18-45-56/fv1p9-4-4dd7_bv1p0-2-fea4/NANOAOD_v1p0c2_1.root
+/store/user/lpcrutgers/sthayil/pseudoaxions/nano/ttPhiPS_M-500_2016APV_09-24/2024-09-16-18-45-56/fv1p9-4-4dd7_bv1p0-2-fea4/NANOAOD_v1p0c2_2.root
+/store/user/lpcrutgers/sthayil/pseudoaxions/nano/ttPhiPS_M-500_2016APV_09-24/2024-09-16-18-45-56/fv1p9-4-4dd7_bv1p0-2-fea4/NANOAOD_v1p0c2_3.root
+/store/user/lpcrutgers/sthayil/pseudoaxions/nano/ttPhiPS_M-500_2016APV_09-24/2024-09-16-18-45-56/fv1p9-4-4dd7_bv1p0-2-fea4/NANOAOD_v1p0c2_4.root
+/store/user/lpcrutgers/sthayil/pseudoaxions/nano/ttPhiPS_M-500_2016APV_09-24/2024-09-16-18-45-56/fv1p9-4-4dd7_bv1p0-2-fea4/NANOAOD_v1p0c2_5.root
+/store/user/lpcrutgers/sthayil/pseudoaxions/nano/ttPhiPS_M-500_2016APV_09-24/2024-09-16-18-45-56/fv1p9-4-4dd7_bv1p0-2-fea4/NANOAOD_v1p0c2_6.root
+/store/user/lpcrutgers/sthayil/pseudoaxions/nano/ttPhiPS_M-500_2016APV_09-24/2024-09-16-18-45-56/fv1p9-4-4dd7_bv1p0-2-fea4/NANOAOD_v1p0c2_7.root
+/store/user/lpcrutgers/sthayil/pseudoaxions/nano/ttPhiPS_M-500_2016APV_09-24/2024-09-16-18-45-56/fv1p9-4-4dd7_bv1p0-2-fea4/NANOAOD_v1p0c2_8.root
+/store/user/lpcrutgers/sthayil/pseudoaxions/nano/ttPhiPS_M-500_2016APV_09-24/2024-09-16-18-45-56/fv1p9-4-4dd7_bv1p0-2-fea4/NANOAOD_v1p0c2_9.root
