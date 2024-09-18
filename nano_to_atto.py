@@ -3,7 +3,7 @@ import os, glob, sys, argparse, socket
 from datetime import datetime
 options = argparse.ArgumentParser(description="Sets up a run to generate attoAODs from nanoAODs")
 options.add_argument("-l", "--lepton",           required=True, help="lepton to be used for analysis", choices=['el','mu'])
-options.add_argument("-y", "--year",             required=True, help="year from run2", choices=['2016','2017','2018'])
+options.add_argument("-y", "--year",             required=True, help="year from run2", choices=['2016','2016APV','2017','2018'])
 options.add_argument("-d", "--dataset",          required=True, help="dataset", choices=['dyjetstoll','wjetstolnu','ttjets','egammaA','egammaB','egammaC','egammaD','singlemuonA','singlemuonB','singlemuonC','singlemuonD','singlemuonE','singlemuonF','singlemuonF2','singlemuonG2','singlemuonH2','sig_M1000','sig_M500','sig_M250','sig_M4000','sig_M2000','sig_M750'])
 options.add_argument("-n", "--numFiles",         nargs='?',     help="#files from filelist in each job (defaults to 500)", const=500, type=int, default=500)
 options.add_argument("-o", "--outputDirectory",  nargs='?',     help="Output base directory filepath for jobs. Should be an EOS area. (Defaults to /store/user/lpcrutgers/sthayil/pseudoaxions/atto_passTrigger)", const='/store/user/lpcrutgers/sthayil/pseudoaxions/atto_passTrigger', type=str, default='/store/user/lpcrutgers/sthayil/pseudoaxions/atto_passTrigger')

@@ -27,11 +27,12 @@ from datetime import datetime
 #230529: introduce 'selections' boolean
 #240215: change triggers to accomodate 2017, 2016 mu
 #240216: accomodate 2017 singlemuonB spl trigger reqs + add highptid req to goodmuon
+#240918: copy 2016 triggers for 2016apv (not sure if legit)
 
 selections=True #req twoprong, basic lep, pass trig
 
 class attoAOD_ttw_mu(Module):
-    def __init__(self, year="2018", mctype="0", attoVersion="240216"): 
+    def __init__(self, year="2018", mctype="0", attoVersion="240918"): 
         self.year = year
         self.mctype = mctype
         self.attoVersion = attoVersion
@@ -91,7 +92,7 @@ class attoAOD_ttw_mu(Module):
             else:
                 if (trigger.Mu50):
                     self.out.fillBranch("passTrigger", True)
-        elif self.year=="2016" and (trigger.Mu50 or trigger.TkMu50): 
+        elif (self.year=="2016" or self.year=="2016APV") and (trigger.Mu50 or trigger.TkMu50): 
             self.out.fillBranch("passTrigger", True)
         else: 
             self.out.fillBranch("passTrigger", False)
@@ -137,6 +138,7 @@ mu_2018_sig_M250  =   lambda: attoAOD_ttw_mu(mctype="13")
 mu_2018_sig_M4000 =   lambda: attoAOD_ttw_mu(mctype="14")
 mu_2018_sig_M2000   = lambda: attoAOD_ttw_mu(mctype="15")
 mu_2018_sig_M750  =   lambda: attoAOD_ttw_mu(mctype="16")
+mu_2018_sig_M3000  =  lambda: attoAOD_ttw_mu(mctype="17")
 mu_2017_singlemuonB = lambda: attoAOD_ttw_mu(year="2017")
 mu_2017_singlemuonC = lambda: attoAOD_ttw_mu(year="2017")
 mu_2017_singlemuonD = lambda: attoAOD_ttw_mu(year="2017")
@@ -168,3 +170,20 @@ mu_2016_sig_M250  =   lambda: attoAOD_ttw_mu(year="2016",mctype="13")
 mu_2016_sig_M4000 =   lambda: attoAOD_ttw_mu(year="2016",mctype="14")
 mu_2016_sig_M2000  =  lambda: attoAOD_ttw_mu(year="2016",mctype="15")
 mu_2016_sig_M750  =   lambda: attoAOD_ttw_mu(year="2016",mctype="16")
+mu_2016APV_singlemuonB = lambda: attoAOD_ttw_mu(year="2016APV")
+mu_2016APV_singlemuonC = lambda: attoAOD_ttw_mu(year="2016APV")
+mu_2016APV_singlemuonD = lambda: attoAOD_ttw_mu(year="2016APV")
+mu_2016APV_singlemuonE = lambda: attoAOD_ttw_mu(year="2016APV")
+mu_2016APV_singlemuonF = lambda: attoAOD_ttw_mu(year="2016APV")
+mu_2016APV_singlemuonF2= lambda: attoAOD_ttw_mu(year="2016APV")
+mu_2016APV_singlemuonG2= lambda: attoAOD_ttw_mu(year="2016APV")
+mu_2016APV_singlemuonH2= lambda: attoAOD_ttw_mu(year="2016APV")
+mu_2016APV_ttjets =      lambda: attoAOD_ttw_mu(year="2016APV",mctype="20")
+mu_2016APV_wjetstolnu =  lambda: attoAOD_ttw_mu(year="2016APV",mctype="21")
+mu_2016APV_dyjetstoll =  lambda: attoAOD_ttw_mu(year="2016APV",mctype="22")
+mu_2016APV_sig_M1000 =   lambda: attoAOD_ttw_mu(year="2016APV",mctype="11")
+mu_2016APV_sig_M500  =   lambda: attoAOD_ttw_mu(year="2016APV",mctype="12")
+mu_2016APV_sig_M250  =   lambda: attoAOD_ttw_mu(year="2016APV",mctype="13")
+mu_2016APV_sig_M4000 =   lambda: attoAOD_ttw_mu(year="2016APV",mctype="14")
+mu_2016APV_sig_M2000  =  lambda: attoAOD_ttw_mu(year="2016APV",mctype="15")
+mu_2016APV_sig_M750  =   lambda: attoAOD_ttw_mu(year="2016APV",mctype="16")
