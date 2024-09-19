@@ -27,7 +27,7 @@ from datetime import datetime
 #230529: introduce 'selections' boolean
 #240215: change triggers to accomodate 2017, 2016 mu
 #240216: accomodate 2017 singlemuonB spl trigger reqs + add highptid req to goodmuon
-#240918: copy 2016 triggers for 2016apv (not sure if legit)
+#240918: copy 2016 triggers for 2016apv (not sure if legit); save 20160 into year branch for 2016APV
 
 selections=True #req twoprong, basic lep, pass trig
 
