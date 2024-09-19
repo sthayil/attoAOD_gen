@@ -117,7 +117,8 @@ class attoAOD_ttw_mu(Module):
             if goodMuon==False: return False
 
         #fill branches
-        self.out.fillBranch("year", int(self.year))
+        if self.year is not "2016APV": self.out.fillBranch("year", int(self.year))
+        else: self.out.fillBranch("year", int(20160))
         self.out.fillBranch("mcType", int(self.mctype))
         self.out.fillBranch("attoVersion", int(self.attoVersion))
         #musf=[1 for x in range(len(leptons))]
@@ -139,6 +140,7 @@ mu_2018_sig_M4000 =   lambda: attoAOD_ttw_mu(mctype="14")
 mu_2018_sig_M2000   = lambda: attoAOD_ttw_mu(mctype="15")
 mu_2018_sig_M750  =   lambda: attoAOD_ttw_mu(mctype="16")
 mu_2018_sig_M3000  =  lambda: attoAOD_ttw_mu(mctype="17")
+mu_2018_sig_M3000_tcoupling1_Wb1Wb1  =  lambda: attoAOD_ttw_mu(mctype="18")
 mu_2017_singlemuonB = lambda: attoAOD_ttw_mu(year="2017")
 mu_2017_singlemuonC = lambda: attoAOD_ttw_mu(year="2017")
 mu_2017_singlemuonD = lambda: attoAOD_ttw_mu(year="2017")
