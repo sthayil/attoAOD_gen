@@ -5,7 +5,7 @@ Tested on hex with CMSSW_14_0_0. Clone into PhysicsTools/NanoAODTools.
 The way to use this is a bit wonky.
 
 First, make sure that filelists exist for the dataset you want to run over. If they don't, run a command like:
-       python makeFilelist.py /cms/twoprong/johnpaul/crab_Nov8/DYJetsToLL_M-50_TuneCP5_13TeV-madgraphMLM-pythia8/DYJets2017/241127_210125/ filelists/2017_dyjetstoll.txt
+     python makeFilelist.py /cms/twoprong/johnpaul/crab_Nov8/DYJetsToLL_M-50_TuneCP5_13TeV-madgraphMLM-pythia8/DYJets2017/241127_210125/ filelists/2017_dyjetstoll.txt
 This will make filelists/2017_dyjetstoll_0.txt, filelists/2017_dyjetstoll_1.txt, etc depending on how many dirs there are from crab.
 
 Then, cd to the top level directory and do
