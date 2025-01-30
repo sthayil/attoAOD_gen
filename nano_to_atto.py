@@ -4,11 +4,12 @@ from datetime import datetime
 options = argparse.ArgumentParser(description="Sets up a run to generate attoAODs from nanoAODs")
 options.add_argument("-l", "--lepton",           required=True, help="lepton to be used for analysis", choices=['el','mu'])
 options.add_argument("-y", "--year",             required=True, help="year from run2", choices=['2016','2016APV','2017','2018'])
-options.add_argument("-d", "--dataset",          required=True, help="dataset", choices=['dyjetstoll','wjetstolnu','ttjets','egammaA','egammaB','egammaC','egammaD','singlemuonA','singlemuonB','singlemuonC','singlemuonD','singlemuonE','singlemuonF','singlemuonF2','singlemuonG2','singlemuonH2','sig_M1000','sig_M500','sig_M250','sig_M4000','sig_M2000','sig_M750'])
+options.add_argument("-d", "--dataset",          required=True, help="dataset", choices=['dyjetstoll','wjetstolnu','ttjets','egammaA','egammaB','egammaC','egammaD','singlemuonA','singlemuonB','singlemuonC','singlemuonD','singlemuonE','singlemuonF','singlemuonF2','singlemuonG2','singlemuonH2','sig_M1000','sig_M500','sig_M250','sig_M4000','sig_M2000','sig_M750','sig_M3000_tcoupling1_Wb1Wb1','sig_M3000'])
 options.add_argument("-n", "--numFiles",         nargs='?',     help="#files from filelist in each job (defaults to 500)", const=500, type=int, default=500)
 options.add_argument("-o", "--outputDirectory",  nargs='?',     help="Output base directory filepath for jobs. Should be an EOS area. (Defaults to /store/user/lpcrutgers/sthayil/pseudoaxions/atto_passTrigger)", const='/store/user/lpcrutgers/sthayil/pseudoaxions/atto_passTrigger', type=str, default='/store/user/lpcrutgers/sthayil/pseudoaxions/atto_passTrigger')
 options.add_argument("-m", "--mode",             nargs='?',     help="Run mode", const='normal', type=str, default='normal', choices=['normal','hadd'])
-options.add_argument("-hd", "--haddDir",         nargs='?',     help="Directory to put hadded files in", const='hadded', type=str, default='hadded')
+options.add_argument("-hd", "--haddDir",         nargs='?',     help="Directory to put hadded files in", const='hadded', type=str, default='hadded'
+#options.add_argument("-s",  "--schedd",          nargs='?',     help="Specific scheduler to submit jobs to", type=str, default=None)
 ops = options.parse_args()
 
 #hadd mode--------------------------------------------------------------------------------
@@ -184,6 +185,7 @@ with open('condorsubmit_lhetominiaod_'+mytimestr+'.jdl', 'w') as file:
 #submit jobs-------------------------------------------------------------------------------
 os.system('cp ../condorsubmit_nanotoatto.sh .')
 print ("Submitting jobs with condor_submit condorsubmit_nanotoatto_"+mytimestr+".jdl ...")
+#if ops.schedd is not None: os.system('condor_submit -name lpcschedd'+ops.schedd+'.fnal.gov condorsubmit_lhetominiaod_'+mytimestr+'.jdl')
 os.system('condor_submit condorsubmit_lhetominiaod_'+mytimestr+'.jdl')
 os.system('mv condorsubmit_lhetominiaod_'+mytimestr+'.jdl jdl_files/')
 

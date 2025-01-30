@@ -5,6 +5,8 @@ ROOT.PyConfig.IgnoreCommandLineOptions = True
 import math
 import os, glob, sys, argparse, socket
 from datetime import datetime
+import json
+from correctionlib import CorrectionSet
 
 #0:  /SingleMuon/Run2018*-UL2018_MiniAODv2-v*/MINIAOD
 #11: /eos/uscms/store/user/lpcrutgers/sthayil/pseudoaxions/nano/ttPhiPS_M-1000/
@@ -28,11 +30,69 @@ from datetime import datetime
 #240215: change triggers to accomodate 2017, 2016 mu
 #240216: accomodate 2017 singlemuonB spl trigger reqs + add highptid req to goodmuon
 #240918: copy 2016 triggers for 2016apv (not sure if legit); save 20160 into year branch for 2016APV
+#241011: first pass at muon reco/id/iso/trig sfs; more stringent selection
+
+with open('ScaleFactors_Muon_highPt_RECO_2018_schemaV2.json', 'r') as reco:
+    correction_data_mu_reco = json.load(reco)
+with open('ScaleFactors_Muon_highPt_IDISO_2018_schemaV2.json', 'r') as idiso:
+    correction_data_mu_idiso = json.load(idiso)
+with open('ScaleFactors_Muon_highPt_HLT_2018_schemaV2.json', 'r') as hlt:
+    correction_data_mu_trig = json.load(hlt)
+
+correction_set_mu_reco = CorrectionSet.from_json(correction_data_mu_reco)
+correction_set_mu_idiso = CorrectionSet.from_json(correction_data_mu_idiso)
+correction_set_mu_trig = CorrectionSet.from_json(correction_data_mu_trig)
+
+# def get_mu_reco_scale_factor(abseta, pt, scale_factor_type):
+#     correction = correction_set_reco['NUM_GlobalMuons_DEN_TrackerMuonProbes']
+#     return correction.evaluate(abseta, pt, scale_factor_type)
+# def get_mu_id_scale_factor(abseta, pt, scale_factor_type):
+#     correction = correction_set_idiso['NUM_HighPtID_DEN_GlobalMuonProbes'] 
+#     return correction.evaluate(abseta, pt, scale_factor_type)
+# def get_mu_iso_scale_factor(abseta, pt, scale_factor_type):
+#     correction = correction_set_idiso['NUM_probe_LooseRelTkIso_DEN_HighPtProbes'] 
+#     return correction.evaluate(abseta, pt, scale_factor_type)
+# def get_mu_hlt_scale_factor(abseta, pt, scale_factor_type):
+#     correction = correction_set_trig['NUM_HLT_DEN_HighPtLooseRelIsoProbes'] 
+#     return correction.evaluate(abseta, pt, scale_factor_type)
+
+def get_mu_combined_scale_factor(abseta, pt, scale_factor_type):
+    correction_reco = correction_set_reco['NUM_GlobalMuons_DEN_TrackerMuonProbes']
+    correction_id   = correction_set_idiso['NUM_HighPtID_DEN_GlobalMuonProbes']
+    correction_iso  = correction_set_idiso['NUM_probe_LooseRelTkIso_DEN_HighPtProbes'] 
+    correction_hlt  = correction_set_trig['NUM_HLT_DEN_HighPtLooseRelIsoProbes'] 
+    return correction_reco.evaluate(abseta, pt, scale_factor_type)*correction_id.evaluate(abseta, pt, scale_factor_type)*correction_iso.evaluate(abseta, pt, scale_factor_type)*correction_hlt.evaluate(abseta, pt, scale_factor_type)
+
+def check_goodtwoprong(twoprongs):
+    if not any(twoprong.pt > 20 and abs(twoprong.eta) < 1.3 for twoprong in twoprongs):
+        return False
+
+def check_goodmuon(muons):
+    if not any(muon.pt > 52 and abs(muon.eta) < 2.4 and muon.highPtId == 2 for muon in muons):
+        return False
+
+def check_goodmuon(muons):
+    good_muons = [muon for muon in muons if muon.pt > 52 and abs(muon.eta) < 2.4 and muon.highPtId == 2]
+    if not good_muons:
+        return False, None
+    
+    leading_muons = [muon for muon in good_muons if muon.tkRelIso < 0.1]
+    if not leading_muons:
+        return True, None
+    
+    leading_muon = max(leading_muons, key=lambda muon: muon.pt)
+    return True, leading_muon
+
+def check_goodjets(jets):
+    if len(jets) < 3:
+        return False
+    goodjets = sum(1 for jet in jets if jet.pt > 30 and abs(jet.eta) < 2.5)
+    return goodjets >= 3
 
 selections=True #req twoprong, basic lep, pass trig
 
 class attoAOD_ttw_mu(Module):
-    def __init__(self, year="2018", mctype="0", attoVersion="240918"): 
+    def __init__(self, year="2018", mctype="0", attoVersion="241011"): 
         self.year = year
         self.mctype = mctype
         self.attoVersion = attoVersion
@@ -51,7 +111,12 @@ class attoAOD_ttw_mu(Module):
 
     def beginFile(self, inputFile, outputFile, inputTree, wrappedOutputTree):
         self.out = wrappedOutputTree
-        #self.out.branch("Muon_scaleFactor","F",lenVar="nMuon")
+        #self.out.branch("Muon_sf_nominal","F",lenVar="nMuon")
+        self.out.branch("Muon_sf_nominal","F")
+        self.out.branch("Muon_sf_systup", "F")
+        self.out.branch("Muon_sf_systdown","F")
+        self.out.branch("Muon_sf_stat","F")
+        self.out.branch("Muon_sf_syst","F")
         self.out.branch("year","I")
         self.out.branch("mcType","I")
         self.out.branch("passTrigger","O")
@@ -99,28 +164,28 @@ class attoAOD_ttw_mu(Module):
             if selections: return False
 
         #event selection
+        good_muon_exists, leading_iso_muon = check_goodmuon(muons)
         if selections:
-            goodTwoprong=False
-            if len(twoprongs)<1: return False
-            for twoprong in twoprongs:
-                if twoprong.pt>20 and abs(twoprong.eta)<2.5: 
-                    goodTwoprong=True
-                    break
-            if goodTwoprong==False: return False
-
-            goodMuon=False
-            if len(muons)<1: return False
-            for muon in muons:
-                if muon.pt>52 and abs(muon.eta)<2.4 and muon.highPtId==2: 
-                    goodMuon = True
-                    break
-            if goodMuon==False: return False
+            if not ( check_goodtwoprong(twoprongs) and check_goodmuon(muons) and check_goodjets(jets) ): return False
 
         #fill branches
-        if self.year is not "2016APV": self.out.fillBranch("year", int(self.year))
+        if self.year != "2016APV": self.out.fillBranch("year", int(self.year))
         else: self.out.fillBranch("year", int(20160))
         self.out.fillBranch("mcType", int(self.mctype))
         self.out.fillBranch("attoVersion", int(self.attoVersion))
+        if leading_iso_muon:
+            self.out.fillBranch("Muon_sf_nominal", get_mu_combined_scale_factor(abs(leading_iso_muon.eta), leading_iso_muon.pt, "nominal"))
+            self.out.fillBranch("Muon_sf_systup",  get_mu_combined_scale_factor(abs(leading_iso_muon.eta), leading_iso_muon.pt, "systup"))
+            self.out.fillBranch("Muon_sf_systdown",get_mu_combined_scale_factor(abs(leading_iso_muon.eta), leading_iso_muon.pt, "systdown"))
+            self.out.fillBranch("Muon_sf_stat",    get_mu_combined_scale_factor(abs(leading_iso_muon.eta), leading_iso_muon.pt, "stat"))
+            self.out.fillBranch("Muon_sf_syst",    get_mu_combined_scale_factor(abs(leading_iso_muon.eta), leading_iso_muon.pt, "syst"))
+        else:
+            self.out.fillBranch("Muon_sf_nominal",-99.0)
+            self.out.fillBranch("Muon_sf_systup",-99.0)
+            self.out.fillBranch("Muon_sf_systdown",-99.0)
+            self.out.fillBranch("Muon_sf_stat",-99.0)
+            self.out.fillBranch("Muon_sf_syst",-99.0)
+
         #musf=[1 for x in range(len(leptons))]
         #self.out.fillBranch("Muon_scaleFactor",musf)
         return True
