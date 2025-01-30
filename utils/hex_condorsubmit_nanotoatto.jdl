@@ -1,0 +1,18 @@
+universe = vanilla
+#+SingularityImage = "/cvmfs/unpacked.cern.ch/registry.hub.docker.com/cmssw/el7:x86_64"
+initialdir = .
+#use_x509userproxy = true
+#x509userproxy         = $ENV(X509_USER_PROXY)
+x509userproxy      = ./x509up
+error  = ./logs/$(Process)_00000000_11111111_22222222.out
+log    = ./logs/$(Process)_00000000_11111111_22222222.log
+output = ./logs/$(Process)_00000000_11111111_22222222.out
+executable = ./hex_condorsubmit_nanotoatto.sh
+transfer_input_files = ../hex_CMSSW_14_0_0.tar.gz
+arguments = $(Process) 00000000 11111111 22222222 33333333 44444444 66666666
+Notification = never
+#request_memory = 4000
+#request_cpus = 8
+should_transfer_files = YES
+when_to_transfer_output = ON_EXIT
+queue 55555555
