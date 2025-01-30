@@ -5,19 +5,25 @@ Tested on hex with CMSSW_14_0_0. Clone into PhysicsTools/NanoAODTools.
 The way to use this is a bit wonky.
 
 First, make sure that filelists exist for the dataset you want to run over. If they don't, run a command like:
-     python makeFilelist.py /cms/twoprong/johnpaul/crab_Nov8/DYJetsToLL_M-50_TuneCP5_13TeV-madgraphMLM-pythia8/DYJets2017/241127_210125/ filelists/2017_dyjetstoll.txt
+
+       python makeFilelist.py /cms/twoprong/johnpaul/crab_Nov8/DYJetsToLL_M-50_TuneCP5_13TeV-madgraphMLM-pythia8/DYJets2017/241127_210125/ filelists/2017_dyjetstoll.txt
+
 This will make filelists/2017_dyjetstoll_0.txt, filelists/2017_dyjetstoll_1.txt, etc depending on how many dirs there are from crab.
 
 Then, cd to the top level directory and do
+
       tar --exclude-vcs -zcf hex_CMSSW_14_0_0.tar.gz -C CMSSW_14_0_0/.. CMSSW_14_0_0
 
 The top level dir also has the condor scripts and the script to run jobs. A copy of these are in CMSSW_14_0_0/src/PhysicsTools/NanoAODTools/utils/. Run jobs with for eg:
+
     python3 nano_to_atto.py -o /cms/thayil/pseudoaxions/pseudoaxions_files/atto_noselec/ -y 2018 -d etaprime_M3000
 
 To hadd the _0, _1 etc files together do:
+
    python3 makeHadded.py ../pseudoaxions_files/atto_noselec/2018_etaprime_M4000_mu/
 
 To test, cp hex_CMSSW_14_0_0.tar.gz into testing_scripts, cd there and run for eg
+
    sh hex_condorsubmit_nanotoatto.sh 0 mu dyjetstoll 2017 . 50 10
 
 --------------------------------------------------------------------------------------
