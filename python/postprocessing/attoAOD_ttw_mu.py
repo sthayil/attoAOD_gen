@@ -8,6 +8,7 @@ from datetime import datetime
 import json
 from correctionlib import CorrectionSet
 from functools import reduce
+import random
 
 #24-11-16: these need to change
 #0:  /SingleMuon/Run2018*-UL2018_MiniAODv2-v*/MINIAOD
@@ -39,59 +40,98 @@ from functools import reduce
 #241202: add muon, btag sfs to 2018 standard model mc
 #241214: fix muon reco sf to use p instead of pt
 #241216: add separate b-tagging efficiencies file for etaprime2018 (uses only M1000). also, bad trigger boolean from 241119 is now fixed.
-#250129: add muon reco/id/iso/hlt sfs and b-tagging sfs for 2017, 2016, 2016apv.
+#250129: add muon reco/id/iso/hlt sfs and b-tagging sfs for 2017, 2016, 2016apv. AND turn selections ON.
+#250203: for 2016apv, 2016, 2017 non-signal mc: add b-tagging efficiency files. for mu reco/id/ido/hlt, include correction files inside mu sf function. for muon pts, introduce factor of leading_iso_muon.tunepRelPt*
+#250217: turn selections OFF
+#250405: changed sfs files filepaths; add muon momentum resolution smearing and systematics; add muon rochester corrections
+#2504??: add pileup reweighting
 #!!!!!!!!!!!NOT DONE also for b-tagging signal mc sfs, make efficiency plots for each mass point.
-version="250129"
+version="250405"
 print("AttoAOD version: ",version)
-selections=True #req twoprong, basic lep, pass trig
+selections=False #req twoprong, basic lep, pass trig
 
-correction_set_2018_mu_reco =  CorrectionSet.from_file('ScaleFactors_Muon_highPt_RECO_2018_schemaV2.json')
-correction_set_2018_mu_idiso = CorrectionSet.from_file('ScaleFactors_Muon_highPt_IDISO_2018_schemaV2.json')
-correction_set_2018_mu_trig =  CorrectionSet.from_file('ScaleFactors_Muon_highPt_HLT_2018_schemaV2.json')
-correction_set_2017_mu_reco =  CorrectionSet.from_file('ScaleFactors_Muon_highPt_RECO_2017_schemaV2.json')
-correction_set_2017_mu_idiso = CorrectionSet.from_file('ScaleFactors_Muon_highPt_IDISO_2017_schemaV2.json')
-correction_set_2017_mu_trig =  CorrectionSet.from_file('ScaleFactors_Muon_highPt_HLT_2017_schemaV2.json')
-correction_set_2016_mu_reco =  CorrectionSet.from_file('ScaleFactors_Muon_highPt_RECO_2016_schemaV2.json')
-correction_set_2016_mu_idiso = CorrectionSet.from_file('ScaleFactors_Muon_highPt_IDISO_2016_schemaV2.json')
-correction_set_2016_mu_trig =  CorrectionSet.from_file('ScaleFactors_Muon_highPt_HLT_2016_schemaV2.json')
-correction_set_2016APV_mu_reco =  CorrectionSet.from_file('ScaleFactors_Muon_highPt_RECO_2016_preVFP_schemaV2.json')
-correction_set_2016APV_mu_idiso = CorrectionSet.from_file('ScaleFactors_Muon_highPt_IDISO_2016_preVFP_schemaV2.json')
-correction_set_2016APV_mu_trig =  CorrectionSet.from_file('ScaleFactors_Muon_highPt_HLT_2016_preVFP_schemaV2.json')
+ROOT.gSystem.Load("MuonRocCor/RoccoR.so")  #pre-compiled library
 
+def get_rochester_mu_corrections(year,mctype,muon,genPt):
+    if year=="2016APV": roccor_file="MuonRocCor/RoccoR2016aUL.txt" 
+    elif year=="2016":  roccor_file="MuonRocCor/RoccoR2016bUL.txt" 
+    elif year=="2017":  roccor_file="MuonRocCor/RoccoR2017UL.txt" 
+    elif year=="2018":  roccor_file="MuonRocCor/RoccoR2018UL.txt" 
+    roccor = ROOT.RoccoR(roccor_file)
+
+    if mctype==0: #data
+        roc_sf  = roccor.kScaleDT(int(muon.charge), muon.pt*muon.tunepRelPt, muon.eta, muon.phi, 0, 0)
+        roc_err = roccor.kScaleDTerror(int(muon.charge), muon.pt*muon.tunepRelPt, muon.eta, muon.phi)
+    else:
+        if genPt != -999: #matched mc muon
+            roc_sf  = roccor.kSpreadMC(int(muon.charge), muon.pt*muon.tunepRelPt, muon.eta, muon.phi, genPt, 0, 0)
+            roc_err = roccor.kSpreadMCerror(int(muon.charge), muon.pt*muon.tunepRelPt, muon.eta, muon.phi, genPt)
+        else: #unmatched mc muon
+            nrandom = random.random()
+            roc_sf  = roccor.kSmearMC(int(muon.charge), muon.pt*muon.tunepRelPt, muon.eta, muon.phi, int(muon.nTrackerLayers), nrandom, 0, 0)
+            roc_err = roccor.kSmearMCerror(int(muon.charge), muon.pt*muon.tunepRelPt, muon.eta, muon.phi, int(muon.nTrackerLayers), nrandom)
+    return(roc_sf, roc_err)
+            
+def muon_momentum_reso_sigma(year, p, eta):
+    if abs(eta) < 1.2:
+        if year=="2016APV": return 0.0112 + 6.87e-05 * p - 3.88e-08 * p**2 + 9.03e-12 * p**3
+        elif year=="2016":  return 0.0102 + 6.77e-05 * p - 3.72e-08 * p**2 + 8.53e-12 * p**3
+        elif year=="2017":  return 0.0104 + 6.11e-05 * p - 3.31e-08 * p**2 + 6.73e-12 * p**3
+        elif year=="2018":  return 0.0108 + 5.93e-05 * p - 3.08e-08 * p**2 + 6.04e-12 * p**3
+    elif 1.2 <= abs(eta) < 2.4:   
+        if year=="2016APV": return 0.013  + 6.93e-05 * p - 3.46e-08 * p**2 + 7.72e-12 * p**3
+        elif year=="2016":  return 0.0129 + 6.48e-05 * p - 3.04e-08 * p**2 + 6.63e-12 * p**3
+        elif year=="2017":  return 0.0121 + 5.92e-05 * p - 2.61e-08 * p**2 + 5.11e-12 * p**3
+        elif year=="2018":  return 0.0136 + 5.47e-05 * p - 2.3e-08  * p**2 + 4.66e-12 * p**3
+    else:
+        return 0
+
+def get_highpt_mu_reso_smearing_sfs(year,p,eta):
+    sigma_p = muon_momentum_reso_sigma(year, p, eta)
+    nocorr = 1.0
+    fiveperc = 1 + random.gauss(0, sigma_p * 0.3202)
+    tenperc = 1 + random.gauss(0, sigma_p * 0.46)
+
+    if abs(eta) < 1.2:
+        if year=="2016APV": return( nocorr, tenperc ) #no additional smearing required for sf, 10% smearing required for syst calc
+        elif year=="2016":  return( nocorr, tenperc ) #no additional smearing required for sf, 10% smearing required for syst calc
+        elif year=="2017":  return( nocorr, tenperc ) #no additional smearing required for sf, 10% smearing required for syst calc
+        elif year=="2018":  return( nocorr, tenperc ) #no additional smearing required for sf, 10% smearing required for syst calc
+    elif 1.2 <= abs(eta) < 2.4:
+        if year=="2016APV": return( nocorr,  tenperc ) #no additional smearing required for sf, 10% smearing required for syst calc
+        elif year=="2016":  return( nocorr,  tenperc ) #no additional smearing required for sf, 10% smearing required for syst calc
+        elif year=="2017":  return( fiveperc, tenperc ) #5% smearing required for sf, 10% smearing required for syst calc
+        elif year=="2018":  return( tenperc,  tenperc ) #10% smearing required for sf, 10% smearing required for syst calc
+    else:
+        return( nocorr, nocorr )
+        
 def get_mu_scale_factor(year, categ, abseta, pt, scale_factor_type): #is actually p, not pt, for muon_reco
+    if year=="2016APV": year="2016_preVFP"
+
     if categ=="reco":
-        if year=="2018":         correction = correction_set_2018_mu_reco['NUM_GlobalMuons_DEN_TrackerMuonProbes']
-        elif year=="2017":       correction = correction_set_2017_mu_reco['NUM_GlobalMuons_DEN_TrackerMuonProbes']
-        elif year=="2016":       correction = correction_set_2016_mu_reco['NUM_GlobalMuons_DEN_TrackerMuonProbes']
-        elif year=="2016APV": correction = correction_set_2016APV_mu_reco['NUM_GlobalMuons_DEN_TrackerMuonProbes']
+        correction_file = "MuonSFs/ScaleFactors_Muon_highPt_RECO_"+year+"_schemaV2.json"
+        correction_set  = CorrectionSet.from_file(correction_file)
+        correction      = correction_set['NUM_GlobalMuons_DEN_TrackerMuonProbes']
     elif categ=="id":
-        if year=="2018":         correction = correction_set_2018_mu_idiso['NUM_HighPtID_DEN_GlobalMuonProbes']
-        elif year=="2017":       correction = correction_set_2017_mu_idiso['NUM_HighPtID_DEN_GlobalMuonProbes']
-        elif year=="2016":       correction = correction_set_2016_mu_idiso['NUM_HighPtID_DEN_GlobalMuonProbes']
-        elif year=="2016APV": correction = correction_set_2016APV_mu_idiso['NUM_HighPtID_DEN_GlobalMuonProbes']
+        correction_file = "MuonSFs/ScaleFactors_Muon_highPt_IDISO_"+year+"_schemaV2.json"
+        correction_set  = CorrectionSet.from_file(correction_file)
+        correction      = correction_set['NUM_HighPtID_DEN_GlobalMuonProbes']
     elif categ=="iso":
-        if year=="2018":         correction = correction_set_2018_mu_idiso['NUM_probe_LooseRelTkIso_DEN_HighPtProbes']
-        elif year=="2017":       correction = correction_set_2017_mu_idiso['NUM_probe_LooseRelTkIso_DEN_HighPtProbes']
-        elif year=="2016":       correction = correction_set_2016_mu_idiso['NUM_probe_LooseRelTkIso_DEN_HighPtProbes']
-        elif year=="2016APV": correction = correction_set_2016APV_mu_idiso['NUM_probe_LooseRelTkIso_DEN_HighPtProbes']
+        correction_file = "MuonSFs/ScaleFactors_Muon_highPt_IDISO_"+year+"_schemaV2.json"
+        correction_set  = CorrectionSet.from_file(correction_file)
+        correction      = correction_set['NUM_probe_LooseRelTkIso_DEN_HighPtProbes']
     elif categ=="hlt":
-        if year=="2018":         correction = correction_set_2018_mu_trig['NUM_HLT_DEN_HighPtLooseRelIsoProbes']
-        elif year=="2017":       correction = correction_set_2017_mu_trig['NUM_HLT_DEN_HighPtLooseRelIsoProbes']
-        elif year=="2016":       correction = correction_set_2016_mu_trig['NUM_HLT_DEN_HighPtLooseRelIsoProbes']
-        elif year=="2016APV": correction = correction_set_2016APV_mu_trig['NUM_HLT_DEN_HighPtLooseRelIsoProbes']
+        correction_file = "MuonSFs/ScaleFactors_Muon_highPt_HLT_"+year+"_schemaV2.json"
+        correction_set  = CorrectionSet.from_file(correction_file)
+        correction      = correction_set['NUM_HLT_DEN_HighPtLooseRelIsoProbes']
     return correction.evaluate(abseta, pt, scale_factor_type)
 
-def load_btagging_efficiency_histograms(year,signaltype):
-    # if year =="2018" and int(signaltype) in range(500,600): b_tagging_efficiency_file = "btag_efficiencies_2018_eta.root" #do a combo of all mass points (rn uses ?? (500 or 1000, probably 500))
-    # if year =="2018" and int(signaltype) in range(600,700): b_tagging_efficiency_file = "btag_efficiencies_2018_etaprime.root" #do a combo of all mass points (rn uses M1000)
-    # if year =="2018" and int(signaltype)==20:  b_tagging_efficiency_file = "btag_efficiencies_2018_ttjets.root"
-    # if year =="2018" and int(signaltype)==21:  b_tagging_efficiency_file = "btag_efficiencies_2018_wjetstolnu.root"
-    # if year =="2018" and int(signaltype)==22:  b_tagging_efficiency_file = "btag_efficiencies_2018_dyjetstoll.root"
-    if year in ["2018","2017","2016","2016APV"] and int(signaltype) in range(500,600): b_tagging_efficiency_file = "btag_efficiencies_2018_eta.root" #do a combo of all mass points (rn uses ?? (500 or 1000, probably 500))
-    if year in ["2018","2017","2016","2016APV"] and int(signaltype) in range(600,700): b_tagging_efficiency_file = "btag_efficiencies_2018_etaprime.root" #do a combo of all mass points (rn uses M1000)
-    if year in ["2018","2017","2016","2016APV"] and int(signaltype)==20:  b_tagging_efficiency_file = "btag_efficiencies_2018_ttjets.root"
-    if year in ["2018","2017","2016","2016APV"] and int(signaltype)==21:  b_tagging_efficiency_file = "btag_efficiencies_2018_wjetstolnu.root"
-    if year in ["2018","2017","2016","2016APV"] and int(signaltype)==22:  b_tagging_efficiency_file = "btag_efficiencies_2018_dyjetstoll.root"
+def load_btagging_efficiency_histograms(year,mctype):
+    if   int(mctype) in range(500,600): b_tagging_efficiency_file = "BTagEfficiencies/btag_efficiencies_2018_eta.root" #do a combo of all mass points (rn uses ?? (500 or 1000, probably 500))
+    elif int(mctype) in range(600,700): b_tagging_efficiency_file = "BTagEfficiencies/btag_efficiencies_2018_etaprime.root" #do a combo of all mass points (rn uses M1000)
+    elif int(mctype)==20:    b_tagging_efficiency_file = "BTagEfficiencies/btag_efficiencies_"+year+"_ttjets.root"
+    elif int(mctype)==21:  b_tagging_efficiency_file = "BTagEfficiencies/btag_efficiencies_"+year+"_wjetstolnu.root"
+    elif int(mctype)==22:  b_tagging_efficiency_file = "BTagEfficiencies/btag_efficiencies_"+year+"_dyjetstoll.root"
     
     myfile = ROOT.TFile.Open(b_tagging_efficiency_file, "READ")
     if not myfile or myfile.IsZombie():
@@ -151,7 +191,7 @@ def check_goodtwoprong(twoprongs): #checks if there is goodtwoprong, and returns
     return True, leading_symiso_2p
 
 def check_goodmuon(muons): #checks if there is goodmuon (w/o isolation cut), and returns leading iso good muon pt if it exists
-    good_muons = [muon for muon in muons if ( muon.pt > 52 and abs(muon.eta) < 2.4 and muon.highPtId == 2 )]
+    good_muons = [muon for muon in muons if ( muon.tunepRelPt*muon.pt > 52 and abs(muon.eta) < 2.4 and muon.highPtId == 2 )]
     if not good_muons:
         return False, None
     
@@ -159,7 +199,7 @@ def check_goodmuon(muons): #checks if there is goodmuon (w/o isolation cut), and
     if not good_iso_muons:
         return True, None
     
-    leading_iso_muon = max(good_iso_muons, key=lambda muon: muon.pt)
+    leading_iso_muon = max(good_iso_muons, key=lambda muon: muon.tunepRelPt*muon.pt)
     return True, leading_iso_muon
 
 def deltaR(obj1, obj2):
@@ -228,6 +268,11 @@ class attoAOD_ttw_mu(Module):
             self.out.branch("SF_BTagging_bc_uncorrelated_down","F")
             self.out.branch("SF_BTagging_light_uncorrelated_up","F")
             self.out.branch("SF_BTagging_light_uncorrelated_down","F")
+            self.out.branch("SF_MuonReso_nominal","F")
+            self.out.branch("SF_MuonReso_syst", "F")
+        self.out.branch("SF_MuonRoc_nominal","F")
+        self.out.branch("SF_MuonRoc_up", "F")
+        self.out.branch("SF_MuonRoc_down","F")
         self.out.branch("year","I")
         self.out.branch("mcType","I")
         self.out.branch("passTrigger","O")
@@ -243,7 +288,8 @@ class attoAOD_ttw_mu(Module):
         jets = Collection(event, "Jet")
         twoprongs = Collection(event, "TwoProng")
         muons = Collection(event, "Muon")
-
+        if self.mctype!="0": genparts = Collection(event, "GenPart")
+            
         # baseline filtering
         if self.mctype=="0":
             pass_filters = (
@@ -372,23 +418,39 @@ class attoAOD_ttw_mu(Module):
         else: self.out.fillBranch("year", int(20160))
         self.out.fillBranch("mcType", int(self.mctype))
         self.out.fillBranch("attoVersion", int(self.attoVersion))
-        if int(self.mctype) in range(500,700) or int(self.mctype) in range(20,30):
+        if leading_iso_muon:
+            genPt=-999
+            if self.mctype!="0" and leading_iso_muon.genPartFlav !=0: #matched mc muon
+                genPt = genparts[leading_iso_muon.genPartIdx].pt
+            roc_sf, roc_err= get_rochester_mu_corrections(self.year, self.mctype, leading_iso_muon, genPt)
+            self.out.fillBranch("SF_MuonRoc_nominal", roc_sf)
+            self.out.fillBranch("SF_MuonRoc_up",      roc_sf + roc_err)
+            self.out.fillBranch("SF_MuonRoc_down",    roc_sf - roc_err)
+        else:
+            self.out.fillBranch("SF_MuonRoc_nominal", 1.0)
+            self.out.fillBranch("SF_MuonRoc_up",      1.0)
+            self.out.fillBranch("SF_MuonRoc_down",    1.0)
+                
+        if int(self.mctype) in range(500,700) or int(self.mctype) in range(20,30): #only for MC
             if leading_iso_muon:
                 leading_iso_muon_vec = ROOT.TLorentzVector()
-                leading_iso_muon_vec.SetPtEtaPhiM(leading_iso_muon.pt, leading_iso_muon.eta, leading_iso_muon.phi, leading_iso_muon.mass)
+                leading_iso_muon_vec.SetPtEtaPhiM(leading_iso_muon.tunepRelPt*leading_iso_muon.pt, leading_iso_muon.eta, leading_iso_muon.phi, leading_iso_muon.mass)
                 leading_iso_muon_p=leading_iso_muon_vec.P()
                 self.out.fillBranch("SF_MuonReco_nominal", get_mu_scale_factor(self.year, "reco", abs(leading_iso_muon.eta), leading_iso_muon_p, "nominal"))
                 self.out.fillBranch("SF_MuonReco_up",      get_mu_scale_factor(self.year, "reco", abs(leading_iso_muon.eta), leading_iso_muon_p, "systup"))
                 self.out.fillBranch("SF_MuonReco_down",    get_mu_scale_factor(self.year, "reco", abs(leading_iso_muon.eta), leading_iso_muon_p, "systdown"))
-                self.out.fillBranch("SF_MuonId_nominal",   get_mu_scale_factor(self.year, "id", abs(leading_iso_muon.eta), leading_iso_muon.pt, "nominal"))
-                self.out.fillBranch("SF_MuonId_up",        get_mu_scale_factor(self.year, "id", abs(leading_iso_muon.eta), leading_iso_muon.pt, "systup"))
-                self.out.fillBranch("SF_MuonId_down",      get_mu_scale_factor(self.year, "id", abs(leading_iso_muon.eta), leading_iso_muon.pt, "systdown"))
-                self.out.fillBranch("SF_MuonIso_nominal",  get_mu_scale_factor(self.year, "iso", abs(leading_iso_muon.eta), leading_iso_muon.pt, "nominal"))
-                self.out.fillBranch("SF_MuonIso_up",       get_mu_scale_factor(self.year, "iso", abs(leading_iso_muon.eta), leading_iso_muon.pt, "systup"))
-                self.out.fillBranch("SF_MuonIso_down",     get_mu_scale_factor(self.year, "iso", abs(leading_iso_muon.eta), leading_iso_muon.pt, "systdown"))
-                self.out.fillBranch("SF_MuonHlt_nominal",  get_mu_scale_factor(self.year, "hlt", abs(leading_iso_muon.eta), leading_iso_muon.pt, "nominal"))
-                self.out.fillBranch("SF_MuonHlt_up",       get_mu_scale_factor(self.year, "hlt", abs(leading_iso_muon.eta), leading_iso_muon.pt, "systup"))
-                self.out.fillBranch("SF_MuonHlt_down",     get_mu_scale_factor(self.year, "hlt", abs(leading_iso_muon.eta), leading_iso_muon.pt, "systdown")) 
+                self.out.fillBranch("SF_MuonId_nominal",   get_mu_scale_factor(self.year, "id", abs(leading_iso_muon.eta), leading_iso_muon.tunepRelPt*leading_iso_muon.pt, "nominal"))
+                self.out.fillBranch("SF_MuonId_up",        get_mu_scale_factor(self.year, "id", abs(leading_iso_muon.eta), leading_iso_muon.tunepRelPt*leading_iso_muon.pt, "systup"))
+                self.out.fillBranch("SF_MuonId_down",      get_mu_scale_factor(self.year, "id", abs(leading_iso_muon.eta), leading_iso_muon.tunepRelPt*leading_iso_muon.pt, "systdown"))
+                self.out.fillBranch("SF_MuonIso_nominal",  get_mu_scale_factor(self.year, "iso", abs(leading_iso_muon.eta), leading_iso_muon.tunepRelPt*leading_iso_muon.pt, "nominal"))
+                self.out.fillBranch("SF_MuonIso_up",       get_mu_scale_factor(self.year, "iso", abs(leading_iso_muon.eta), leading_iso_muon.tunepRelPt*leading_iso_muon.pt, "systup"))
+                self.out.fillBranch("SF_MuonIso_down",     get_mu_scale_factor(self.year, "iso", abs(leading_iso_muon.eta), leading_iso_muon.tunepRelPt*leading_iso_muon.pt, "systdown"))
+                self.out.fillBranch("SF_MuonHlt_nominal",  get_mu_scale_factor(self.year, "hlt", abs(leading_iso_muon.eta), leading_iso_muon.tunepRelPt*leading_iso_muon.pt, "nominal"))
+                self.out.fillBranch("SF_MuonHlt_up",       get_mu_scale_factor(self.year, "hlt", abs(leading_iso_muon.eta), leading_iso_muon.tunepRelPt*leading_iso_muon.pt, "systup"))
+                self.out.fillBranch("SF_MuonHlt_down",     get_mu_scale_factor(self.year, "hlt", abs(leading_iso_muon.eta), leading_iso_muon.tunepRelPt*leading_iso_muon.pt, "systdown"))
+                muon_reso_sf, muon_reso_syst_sf = get_highpt_mu_reso_smearing_sfs(self.year, leading_iso_muon_p, leading_iso_muon.eta)
+                self.out.fillBranch("SF_MuonReso_nominal", muon_reso_sf)
+                self.out.fillBranch("SF_MuonReso_syst",    muon_reso_syst_sf)
             else:
                 self.out.fillBranch("SF_MuonReco_nominal", -99.0)
                 self.out.fillBranch("SF_MuonReco_up",      -99.0)
@@ -401,8 +463,9 @@ class attoAOD_ttw_mu(Module):
                 self.out.fillBranch("SF_MuonIso_down",     -99.0)
                 self.out.fillBranch("SF_MuonHlt_nominal",  -99.0)
                 self.out.fillBranch("SF_MuonHlt_up",       -99.0)
-                self.out.fillBranch("SF_MuonHlt_down",     -99.0) 
-
+                self.out.fillBranch("SF_MuonHlt_down",     -99.0)
+                self.out.fillBranch("SF_MuonReso_nominal", 1.0)
+                self.out.fillBranch("SF_MuonReso_syst",    1.0)
             if cleaned_jets:
                 self.out.fillBranch("SF_BTagging_nominal",                 nominal)
                 self.out.fillBranch("SF_BTagging_bc_correlated_up",        bc_correlated_up)
@@ -423,7 +486,6 @@ class attoAOD_ttw_mu(Module):
                 self.out.fillBranch("SF_BTagging_bc_uncorrelated_down",    -99.0)
                 self.out.fillBranch("SF_BTagging_light_uncorrelated_up",   -99.0)
                 self.out.fillBranch("SF_BTagging_light_uncorrelated_down", -99.0)
-                
         return True
 
 # define modules using the syntax 'name = lambda : constructor' to avoid having them loaded when not needed
