@@ -15,7 +15,7 @@ ops = options.parse_args()
 #hadd mode--------------------------------------------------------------------------------
 if ops.mode=='hadd':
     hostname = socket.gethostname()
-    jobname = ops.lepton+'_'+ops.dataset+'_'+ops.year
+    jobname = ops.year+'_'+ops.dataset+'_'+ops.lepton
     if ".fnal.gov" in hostname:
         # if not os.path.isdir(ops.haddDir): 
         #     print ("Making job directory "+ops.haddDir)
@@ -92,14 +92,15 @@ if ops.mode=='hadd':
                     exit()
 
                 os.system('rm haddfilelist')
-                os.chdir(jobname)
+                #os.chdir(jobname)
 
-                command='python ../scripts/haddnano.py '+jobname+'.root '
+                command='python3 CMSSW_14_0_0/src/PhysicsTools/NanoAODTools/scripts/haddnano.py '+jobname+'.root '
                 for rootFile in rootFiles: 
                     #os.system('xrdcp -s root://cmseos.fnal.gov/'+ops.outputDirectory+'/'+jobname+'/'+rootFile+' .')
                     command+=ops.outputDirectory+'/'+jobname+'/'+rootFile+' '
                 os.system(command)
-                os.system('mv '+jobname+'.root ../'+ops.haddDir)
+                os.system('cd '+ops.outputDirectory)
+                os.system('mv '+jobname+'.root '+ops.haddDir)
                 #for rootFile in rootFiles: os.system('rm '+rootFile)
                 tottotEntries=0
                 for totEntrFile in totEntrFiles: 
@@ -109,7 +110,7 @@ if ops.mode=='hadd':
                         tottotEntries+=int(dataline)
                     #os.system('rm '+totEntrFile)
                 print ("\n\n"+str(tottotEntries))
-                with open('../'+ops.haddDir+'/'+jobname+'_totentries.txt', 'w') as entriesfile:
+                with open(ops.haddDir+'/'+jobname+'_totentries.txt', 'w') as entriesfile:
                     entriesfile.write(str(tottotEntries))
         else:
             print ("ERROR: Output directory: "+ops.outputDirectory+'/'+jobname+" is not a valid path")

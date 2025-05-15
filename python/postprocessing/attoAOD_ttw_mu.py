@@ -44,14 +44,114 @@ import random
 #250203: for 2016apv, 2016, 2017 non-signal mc: add b-tagging efficiency files. for mu reco/id/ido/hlt, include correction files inside mu sf function. for muon pts, introduce factor of leading_iso_muon.tunepRelPt*
 #250217: turn selections OFF
 #250405: changed sfs files filepaths; add muon momentum resolution smearing and systematics; add muon rochester corrections
-#2504??: add pileup reweighting
+#250406: add pileup reweighting SFs
+#250429: modify muon p reso systematics to operate on the smeared p
+#250515: add jet sfs and corrs (jec, jer) 
 #!!!!!!!!!!!NOT DONE also for b-tagging signal mc sfs, make efficiency plots for each mass point.
-version="250405"
+version="250515"
 print("AttoAOD version: ",version)
-selections=False #req twoprong, basic lep, pass trig
+selections=True #req twoprong, basic lep, pass trig
 
 ROOT.gSystem.Load("MuonRocCor/RoccoR.so")  #pre-compiled library
 
+def correct_jet(year,mctype,run,rawFactor,pt,eta,mass,area,rho,genjetpt):
+    #pT of the jet before specific correction (for JER and uncertainties: after all corrections
+    scaletag="L1L2L3Res"
+    resotag="PtResolution"
+    resosftag="ScaleFactor" #nom, up, down
+    correl_uncert=  ["Absolute", "FlavorQCD", "BBEC1", "EC2", "HF", "RelativeBal", "Total"]
+    uncorrel_uncert=["Absolute", "BBEC1", "EC2", "HF", "RelativeSample"]
+    
+    if year=="2016APV":
+        year="2016preVFP"
+        yearforuncert="2016"
+        if mctype==0: jectag="Summer19UL16APV_Run"+run+"_V7_DATA"
+        else:
+            jectag="Summer19UL16APV_V7_MC"
+            jertag="Summer20UL16APV_JRV3_MC"
+
+    elif year=="2016":
+        year="2016postVFP"
+        yearforuncert="2016"
+        if mctype==0: jectag="Summer19UL16_RunFGH_V7_DATA"
+        else:
+            jectag="Summer19UL16_V7_MC"
+            jertag="Summer20UL16_JRV3_MC"
+
+    elif year=="2017":
+        yearforuncert="2017"
+        if mctype==0: jectag="Summer19UL17_Run"+run+"_V5_DATA"
+        else:
+            jectag="Summer19UL17_V5_MC"
+            jertag="Summer19UL17_JRV2_MC"
+
+    elif year=="2018":
+        yearforuncert="2018"
+        if mctype==0: jectag="Summer19UL18_Run"+run+"_V5_DATA"
+        else:
+            jectag="Summer19UL18_V5_MC"
+            jertag="Summer19UL18_JRV2_MC"
+
+    correction_file = "POG/JME/"+year+"_UL/jet_jerc.json.gz"
+    correction_set  = CorrectionSet.from_file(correction_file)
+    
+    pt_raw = (1 - rawFactor)*pt
+
+    correl_uncert_vals=[]
+    uncorrel_uncert_vals=[]
+    
+    #evaluate corrections and uncertainties
+    correction = correction_set.compound[jectag+"_"+scaletag+"_AK4PFchs"]
+    corrval = correction.evaluate(area, eta, pt_raw, rho)
+    pt_corr = pt_raw*corrval
+
+    if mctype!=0:
+        correction = correction_set[jertag+"_"+resosftag+"_AK4PFchs"]
+        reso_basesf = correction.evaluate(eta,"nom")
+        reso_basesf_up = correction.evaluate(eta,"up")
+        reso_basesf_down = correction.evaluate(eta,"down")
+
+        correction = correction_set[jertag+"_"+resotag+"_AK4PFchs"]
+        ptreso = correction.evaluate(eta,pt_corr,rho)
+
+        reso_sf = calculate_new_jet_resolution_sf(reso_basesf,pt_corr,genjetpt,ptreso)
+        reso_sf_up = calculate_new_jet_resolution_sf(reso_basesf_up,pt_corr,genjetpt,ptreso)
+        reso_sf_down = calculate_new_jet_resolution_sf(reso_basesf_down,pt_corr,genjetpt,ptreso)
+        
+        for uncert in correl_uncert:
+            correction = correction_set[jectag+"_Regrouped_"+uncert+"_AK4PFchs"]
+            correl_uncert_vals.append( correction.evaluate(eta,pt_corr) )
+            
+        for uncert in uncorrel_uncert:
+            correction = correction_set[jectag+"_Regrouped_"+uncert+"_"+yearforuncert+"_AK4PFchs"]
+            uncorrel_uncert_vals.append( correction.evaluate(eta,pt_corr) )
+
+        return(corrval,pt_corr, reso_sf,reso_sf_up,reso_sf_down, correl_uncert_vals,uncorrel_uncert_vals)
+
+    else: #for data
+        return(corrval,pt_corr)
+
+def calculate_new_jet_resolution_sf(reso_basesf,pt_corr,genjetpt,ptreso):
+    if genjetpt<0: #stochastic smearing
+        if max(reso_basesf**2 - 1, 0) == 0: reso_sf=1
+        else:
+            gauss_random = random.gauss(0, ptreso)
+            reso_sf = 1 + (gauss_random * math.sqrt(reso_basesf**2 - 1))
+    else: #scaling
+        reso_sf = 1 + ( ((reso_basesf-1)*(pt_corr-genjetpt)) / pt_corr)
+        if reso_sf<0: reso_sf=0
+    return(reso_sf)
+    
+def get_pileup_weight(year,nTrueInt):
+    if year=="2016APV": year="2016preVFP"
+    elif year=="2016":  year="2016postVFP"
+    correction_file = "POG/LUM/"+year+"_UL/puWeights.json.gz"
+    pu_weight_corr = list(CorrectionSet.from_file(correction_file).values())[0] #this works, but just in case, keys are: Collisions16_UltraLegacy_goldenJSON, Collisions17_UltraLegacy_goldenJSON, Collisions18_UltraLegacy_goldenJSON
+    pu_weight = pu_weight_corr.evaluate( nTrueInt, 'nominal' )
+    pu_weight_up = pu_weight_corr.evaluate( nTrueInt, 'up' )
+    pu_weight_down = pu_weight_corr.evaluate( nTrueInt, 'down' )
+    return(pu_weight,pu_weight_up,pu_weight_down)
+    
 def get_rochester_mu_corrections(year,mctype,muon,genPt):
     if year=="2016APV": roccor_file="MuonRocCor/RoccoR2016aUL.txt" 
     elif year=="2016":  roccor_file="MuonRocCor/RoccoR2016bUL.txt" 
@@ -100,8 +200,8 @@ def get_highpt_mu_reso_smearing_sfs(year,p,eta):
     elif 1.2 <= abs(eta) < 2.4:
         if year=="2016APV": return( nocorr,  tenperc ) #no additional smearing required for sf, 10% smearing required for syst calc
         elif year=="2016":  return( nocorr,  tenperc ) #no additional smearing required for sf, 10% smearing required for syst calc
-        elif year=="2017":  return( fiveperc, tenperc ) #5% smearing required for sf, 10% smearing required for syst calc
-        elif year=="2018":  return( tenperc,  tenperc ) #10% smearing required for sf, 10% smearing required for syst calc
+        elif year=="2017":  return( fiveperc, 1 + random.gauss(0, fiveperc * 0.46) ) #5% smearing required for sf, 10% smearing required for syst calc
+        elif year=="2018":  return( tenperc,  1 + random.gauss(0, tenperc * 0.46) ) #10% smearing required for sf, 10% smearing required for syst calc
     else:
         return( nocorr, nocorr )
         
@@ -226,9 +326,10 @@ def check_goodjets(jets,leading_iso_muon,leading_symiso_2p): #check if there are
     #19-11-2024: clean goodjets of the leading iso muon if it exists, and the leading isosym 2p if it exists
 
 class attoAOD_ttw_mu(Module):
-    def __init__(self, year="2018", mctype="0", attoVersion=version): 
+    def __init__(self, year="2018", mctype="0", attoVersion=version, run=None): 
         self.year = year
         self.mctype = mctype
+        self.run = run
         self.attoVersion = attoVersion
         pass
 
@@ -268,15 +369,40 @@ class attoAOD_ttw_mu(Module):
             self.out.branch("SF_BTagging_bc_uncorrelated_down","F")
             self.out.branch("SF_BTagging_light_uncorrelated_up","F")
             self.out.branch("SF_BTagging_light_uncorrelated_down","F")
-            self.out.branch("SF_MuonReso_nominal","F")
-            self.out.branch("SF_MuonReso_syst", "F")
-        self.out.branch("SF_MuonRoc_nominal","F")
-        self.out.branch("SF_MuonRoc_up", "F")
-        self.out.branch("SF_MuonRoc_down","F")
+            self.out.branch("SF_Pileup_nominal","F")
+            self.out.branch("SF_Pileup_up", "F")
+            self.out.branch("SF_Pileup_down","F")
+            self.out.branch("Corr_MuonReso_nominal","F")
+            self.out.branch("Corr_MuonReso_syst", "F")
+        self.out.branch("Corr_MuonRoc_nominal","F")
+        self.out.branch("Corr_MuonRoc_up", "F")
+        self.out.branch("Corr_MuonRoc_down","F")
         self.out.branch("year","I")
         self.out.branch("mcType","I")
         self.out.branch("passTrigger","O")
         self.out.branch("attoVersion","I")
+
+        #for jet corrs
+        self.out.branch("nJetCorr",             "I")
+        self.out.branch("JetCorr_pt",           "F", lenVar="nJetCorr")
+        self.out.branch("JetCorr_corrval",      "F", lenVar="nJetCorr")
+        self.out.branch("JetCorr_uncorrpt",     "F", lenVar="nJetCorr")
+        if int(self.mctype) !=0:
+            self.out.branch("Corr_JetCorr_Absolute_correlated",             "F", lenVar="nJetCorr")
+            self.out.branch("Corr_JetCorr_FlavorQCD_correlated",            "F", lenVar="nJetCorr")
+            self.out.branch("Corr_JetCorr_BBEC1_correlated",                "F", lenVar="nJetCorr")
+            self.out.branch("Corr_JetCorr_EC2_correlated",                  "F", lenVar="nJetCorr")
+            self.out.branch("Corr_JetCorr_HF_correlated",                   "F", lenVar="nJetCorr")
+            self.out.branch("Corr_JetCorr_RelativeBal_correlated",          "F", lenVar="nJetCorr")
+            self.out.branch("Corr_JetCorr_Absolute_uncorrelated",           "F", lenVar="nJetCorr")
+            self.out.branch("Corr_JetCorr_BBEC1_uncorrelated",              "F", lenVar="nJetCorr")
+            self.out.branch("Corr_JetCorr_EC2_uncorrelated",                "F", lenVar="nJetCorr")
+            self.out.branch("Corr_JetCorr_HF_uncorrelated",                 "F", lenVar="nJetCorr")
+            self.out.branch("Corr_JetCorr_RelativeSample_uncorrelated",     "F", lenVar="nJetCorr")
+            self.out.branch("Corr_JetCorr_Total",                           "F", lenVar="nJetCorr")
+            self.out.branch("Corr_JetCorr_JER",                                "F", lenVar="nJetCorr")
+            self.out.branch("Corr_JetCorr_JER_uncorrelated_up",                "F", lenVar="nJetCorr")
+            self.out.branch("Corr_JetCorr_JER_uncorrelated_down",              "F", lenVar="nJetCorr")
 
     def endFile(self, inputFile, outputFile, inputTree, wrappedOutputTree):
         pass
@@ -288,8 +414,10 @@ class attoAOD_ttw_mu(Module):
         jets = Collection(event, "Jet")
         twoprongs = Collection(event, "TwoProng")
         muons = Collection(event, "Muon")
-        if self.mctype!="0": genparts = Collection(event, "GenPart")
-            
+        if self.mctype!="0":
+            genparts = Collection(event, "GenPart")
+            genjets = Collection(event, "GenJet")
+        
         # baseline filtering
         if self.mctype=="0":
             pass_filters = (
@@ -328,6 +456,80 @@ class attoAOD_ttw_mu(Module):
         if selections:
             if not ( good_2p_exists and good_muon_exists and enough_goodjets_exist ): return False
 
+        jetcorr_pt=[]
+        jetcorr_corrval=[]
+        jetcorr_uncorrpt=[]
+        jetcorr_Absolute_correlated             =[]
+        jetcorr_FlavorQCD_correlated            =[]
+        jetcorr_BBEC1_correlated                =[]
+        jetcorr_EC2_correlated                  =[]
+        jetcorr_HF_correlated                   =[]
+        jetcorr_RelativeBal_correlated          =[]
+        jetcorr_Absolute_uncorrelated           =[]
+        jetcorr_BBEC1_uncorrelated              =[]
+        jetcorr_EC2_uncorrelated                =[]
+        jetcorr_HF_uncorrelated                 =[]
+        jetcorr_RelativeSample_uncorrelated     =[]
+        jetcorr_Total                           =[]
+        jetcorr_JER                             =[]
+        jetcorr_JER_uncorrelated_up             =[]
+        jetcorr_JER_uncorrelated_down           =[]
+        
+        for jet in jets:
+            genjetPt=-999
+            if self.mctype!="0" and jet.genJetIdx>=0: #matched mc jet
+                try:
+                    genjetPt = genjets[(jet.genJetIdx)].pt
+                except IndexError:
+                    genjetPt=-999
+
+            if (not enough_goodjets_exist) or (jet.pt < 30) or (abs(jet.eta) > 2.5):
+                jetcorr_pt.append(jet.pt)
+                jetcorr_corrval.append(1)
+                jetcorr_uncorrpt.append(jet.pt)
+                if self.mctype!="0":
+                    jetcorr_Absolute_correlated.append(0)
+                    jetcorr_FlavorQCD_correlated.append(0)
+                    jetcorr_BBEC1_correlated.append(0)
+                    jetcorr_EC2_correlated.append(0)
+                    jetcorr_HF_correlated.append(0)
+                    jetcorr_RelativeBal_correlated.append(0)
+                    jetcorr_Absolute_uncorrelated.append(0)
+                    jetcorr_BBEC1_uncorrelated.append(0)
+                    jetcorr_EC2_uncorrelated.append(0)
+                    jetcorr_HF_uncorrelated.append(0)
+                    jetcorr_RelativeSample_uncorrelated.append(0)
+                    jetcorr_Total.append(0)
+                    jetcorr_JER.append(1)
+                    jetcorr_JER_uncorrelated_up.append(1)
+                    jetcorr_JER_uncorrelated_down.append(1)
+            else:
+                if self.mctype=="0":
+                    corrval,pt_corr=correct_jet(self.year, self.mctype, self.run, jet.rawFactor, jet.pt, jet.eta, jet.mass, jet.area, event.fixedGridRhoFastjetAll, genjetPt)
+                    jetcorr_pt.append(pt_corr)
+                    jetcorr_corrval.append(corrval)
+                    jetcorr_uncorrpt.append(jet.pt)
+                else:
+                    corrval,pt_corr, reso_sf,reso_sf_up,reso_sf_down, correl_uncert_vals,uncorrel_uncert_vals = correct_jet(self.year, self.mctype, self.run, jet.rawFactor, jet.pt, jet.eta, jet.mass, jet.area, event.fixedGridRhoFastjetAll, genjetPt)
+                    jetcorr_pt.append(pt_corr)
+                    jetcorr_corrval.append(corrval)
+                    jetcorr_uncorrpt.append(jet.pt)
+                    jetcorr_Absolute_correlated.append(correl_uncert_vals[0])
+                    jetcorr_FlavorQCD_correlated.append(correl_uncert_vals[1])
+                    jetcorr_BBEC1_correlated.append(correl_uncert_vals[2])
+                    jetcorr_EC2_correlated.append(correl_uncert_vals[3])
+                    jetcorr_HF_correlated.append(correl_uncert_vals[4])
+                    jetcorr_RelativeBal_correlated.append(correl_uncert_vals[5])
+                    jetcorr_Total.append(correl_uncert_vals[6])
+                    jetcorr_Absolute_uncorrelated.append(uncorrel_uncert_vals[0])
+                    jetcorr_BBEC1_uncorrelated.append(uncorrel_uncert_vals[1])
+                    jetcorr_EC2_uncorrelated.append(uncorrel_uncert_vals[2])
+                    jetcorr_HF_uncorrelated.append(uncorrel_uncert_vals[3])
+                    jetcorr_RelativeSample_uncorrelated.append(uncorrel_uncert_vals[4])
+                    jetcorr_JER.append(reso_sf)
+                    jetcorr_JER_uncorrelated_up.append(reso_sf_up)
+                    jetcorr_JER_uncorrelated_down.append(reso_sf_down)
+                
         #Construct b-tagging related event weights
         if ( int(self.mctype) in range(500,700) or int(self.mctype) in range(20,30))  and cleaned_jets is not None:
             efficiency_b, efficiency_c, efficiency_light = load_btagging_efficiency_histograms(self.year,self.mctype)
@@ -418,20 +620,48 @@ class attoAOD_ttw_mu(Module):
         else: self.out.fillBranch("year", int(20160))
         self.out.fillBranch("mcType", int(self.mctype))
         self.out.fillBranch("attoVersion", int(self.attoVersion))
+
+        self.out.fillBranch("nJetCorr",    len(jetcorr_pt))
+        self.out.fillBranch("JetCorr_pt",       jetcorr_pt)
+        self.out.fillBranch("JetCorr_corrval",  jetcorr_corrval)
+        self.out.fillBranch("JetCorr_uncorrpt", jetcorr_uncorrpt)
+        if int(self.mctype) !=0:
+            self.out.fillBranch("Corr_JetCorr_Absolute_correlated",        jetcorr_Absolute_correlated)
+            self.out.fillBranch("Corr_JetCorr_FlavorQCD_correlated",       jetcorr_FlavorQCD_correlated)
+            self.out.fillBranch("Corr_JetCorr_BBEC1_correlated",           jetcorr_BBEC1_correlated)
+            self.out.fillBranch("Corr_JetCorr_EC2_correlated",             jetcorr_EC2_correlated)
+            self.out.fillBranch("Corr_JetCorr_HF_correlated",              jetcorr_HF_correlated)
+            self.out.fillBranch("Corr_JetCorr_RelativeBal_correlated",     jetcorr_RelativeBal_correlated)
+            self.out.fillBranch("Corr_JetCorr_Total",                      jetcorr_Total)
+            self.out.fillBranch("Corr_JetCorr_Absolute_uncorrelated",      jetcorr_Absolute_uncorrelated)
+            self.out.fillBranch("Corr_JetCorr_BBEC1_uncorrelated",         jetcorr_BBEC1_uncorrelated)
+            self.out.fillBranch("Corr_JetCorr_EC2_uncorrelated",           jetcorr_EC2_uncorrelated)
+            self.out.fillBranch("Corr_JetCorr_HF_uncorrelated",            jetcorr_HF_uncorrelated)
+            self.out.fillBranch("Corr_JetCorr_RelativeSample_uncorrelated",jetcorr_RelativeSample_uncorrelated)
+            self.out.fillBranch("Corr_JetCorr_JER",                        jetcorr_JER)
+            self.out.fillBranch("Corr_JetCorr_JER_uncorrelated_up",        jetcorr_JER_uncorrelated_up)
+            self.out.fillBranch("Corr_JetCorr_JER_uncorrelated_down",      jetcorr_JER_uncorrelated_down)
+
         if leading_iso_muon:
             genPt=-999
             if self.mctype!="0" and leading_iso_muon.genPartFlav !=0: #matched mc muon
                 genPt = genparts[leading_iso_muon.genPartIdx].pt
             roc_sf, roc_err= get_rochester_mu_corrections(self.year, self.mctype, leading_iso_muon, genPt)
-            self.out.fillBranch("SF_MuonRoc_nominal", roc_sf)
-            self.out.fillBranch("SF_MuonRoc_up",      roc_sf + roc_err)
-            self.out.fillBranch("SF_MuonRoc_down",    roc_sf - roc_err)
+            self.out.fillBranch("Corr_MuonRoc_nominal", roc_sf)
+            self.out.fillBranch("Corr_MuonRoc_up",      roc_sf + roc_err)
+            self.out.fillBranch("Corr_MuonRoc_down",    roc_sf - roc_err)
         else:
-            self.out.fillBranch("SF_MuonRoc_nominal", 1.0)
-            self.out.fillBranch("SF_MuonRoc_up",      1.0)
-            self.out.fillBranch("SF_MuonRoc_down",    1.0)
+            self.out.fillBranch("Corr_MuonRoc_nominal", 1.0)
+            self.out.fillBranch("Corr_MuonRoc_up",      1.0)
+            self.out.fillBranch("Corr_MuonRoc_down",    1.0)
                 
         if int(self.mctype) in range(500,700) or int(self.mctype) in range(20,30): #only for MC
+            pu_weight, pu_weight_up, pu_weight_down = 1.0, 1.0, 1.0
+            pu_weight, pu_weight_up, pu_weight_down = get_pileup_weight(self.year, event.Pileup_nTrueInt)
+            self.out.fillBranch("SF_Pileup_nominal", pu_weight)
+            self.out.fillBranch("SF_Pileup_up",      pu_weight_up)
+            self.out.fillBranch("SF_Pileup_down",    pu_weight_down)
+        
             if leading_iso_muon:
                 leading_iso_muon_vec = ROOT.TLorentzVector()
                 leading_iso_muon_vec.SetPtEtaPhiM(leading_iso_muon.tunepRelPt*leading_iso_muon.pt, leading_iso_muon.eta, leading_iso_muon.phi, leading_iso_muon.mass)
@@ -449,8 +679,8 @@ class attoAOD_ttw_mu(Module):
                 self.out.fillBranch("SF_MuonHlt_up",       get_mu_scale_factor(self.year, "hlt", abs(leading_iso_muon.eta), leading_iso_muon.tunepRelPt*leading_iso_muon.pt, "systup"))
                 self.out.fillBranch("SF_MuonHlt_down",     get_mu_scale_factor(self.year, "hlt", abs(leading_iso_muon.eta), leading_iso_muon.tunepRelPt*leading_iso_muon.pt, "systdown"))
                 muon_reso_sf, muon_reso_syst_sf = get_highpt_mu_reso_smearing_sfs(self.year, leading_iso_muon_p, leading_iso_muon.eta)
-                self.out.fillBranch("SF_MuonReso_nominal", muon_reso_sf)
-                self.out.fillBranch("SF_MuonReso_syst",    muon_reso_syst_sf)
+                self.out.fillBranch("Corr_MuonReso_nominal", muon_reso_sf)
+                self.out.fillBranch("Corr_MuonReso_syst",    muon_reso_syst_sf)
             else:
                 self.out.fillBranch("SF_MuonReco_nominal", -99.0)
                 self.out.fillBranch("SF_MuonReco_up",      -99.0)
@@ -464,8 +694,8 @@ class attoAOD_ttw_mu(Module):
                 self.out.fillBranch("SF_MuonHlt_nominal",  -99.0)
                 self.out.fillBranch("SF_MuonHlt_up",       -99.0)
                 self.out.fillBranch("SF_MuonHlt_down",     -99.0)
-                self.out.fillBranch("SF_MuonReso_nominal", 1.0)
-                self.out.fillBranch("SF_MuonReso_syst",    1.0)
+                self.out.fillBranch("Corr_MuonReso_nominal", 1.0)
+                self.out.fillBranch("Corr_MuonReso_syst",    1.0)
             if cleaned_jets:
                 self.out.fillBranch("SF_BTagging_nominal",                 nominal)
                 self.out.fillBranch("SF_BTagging_bc_correlated_up",        bc_correlated_up)
@@ -489,10 +719,10 @@ class attoAOD_ttw_mu(Module):
         return True
 
 # define modules using the syntax 'name = lambda : constructor' to avoid having them loaded when not needed
-mu_2018_singlemuonA =      lambda: attoAOD_ttw_mu()
-mu_2018_singlemuonB =      lambda: attoAOD_ttw_mu()
-mu_2018_singlemuonC =      lambda: attoAOD_ttw_mu()
-mu_2018_singlemuonD =      lambda: attoAOD_ttw_mu()
+mu_2018_singlemuonA =      lambda: attoAOD_ttw_mu(run="A")
+mu_2018_singlemuonB =      lambda: attoAOD_ttw_mu(run="B")
+mu_2018_singlemuonC =      lambda: attoAOD_ttw_mu(run="C")
+mu_2018_singlemuonD =      lambda: attoAOD_ttw_mu(run="D")
 mu_2018_ttjets =           lambda: attoAOD_ttw_mu(mctype="20")
 mu_2018_wjetstolnu =       lambda: attoAOD_ttw_mu(mctype="21")
 mu_2018_dyjetstoll =       lambda: attoAOD_ttw_mu(mctype="22")
@@ -513,11 +743,11 @@ mu_2018_etaprime_M2500 =   lambda: attoAOD_ttw_mu(mctype="606")
 mu_2018_etaprime_M3000 =   lambda: attoAOD_ttw_mu(mctype="607")
 mu_2018_etaprime_M4000 =   lambda: attoAOD_ttw_mu(mctype="608")
 
-mu_2017_singlemuonB =      lambda: attoAOD_ttw_mu(year="2017")
-mu_2017_singlemuonC =      lambda: attoAOD_ttw_mu(year="2017")
-mu_2017_singlemuonD =      lambda: attoAOD_ttw_mu(year="2017")
-mu_2017_singlemuonE =      lambda: attoAOD_ttw_mu(year="2017")
-mu_2017_singlemuonF =      lambda: attoAOD_ttw_mu(year="2017")
+mu_2017_singlemuonB =      lambda: attoAOD_ttw_mu(year="2017",run="B")
+mu_2017_singlemuonC =      lambda: attoAOD_ttw_mu(year="2017",run="C")
+mu_2017_singlemuonD =      lambda: attoAOD_ttw_mu(year="2017",run="D")
+mu_2017_singlemuonE =      lambda: attoAOD_ttw_mu(year="2017",run="E")
+mu_2017_singlemuonF =      lambda: attoAOD_ttw_mu(year="2017",run="F")
 mu_2017_ttjets =           lambda: attoAOD_ttw_mu(year="2017",mctype="20")
 mu_2017_wjetstolnu =       lambda: attoAOD_ttw_mu(year="2017",mctype="21")
 mu_2017_dyjetstoll =       lambda: attoAOD_ttw_mu(year="2017",mctype="22")
@@ -561,11 +791,11 @@ mu_2016_etaprime_M2500 =   lambda: attoAOD_ttw_mu(year="2016",mctype="606")
 mu_2016_etaprime_M3000 =   lambda: attoAOD_ttw_mu(year="2016",mctype="607")
 mu_2016_etaprime_M4000 =   lambda: attoAOD_ttw_mu(year="2016",mctype="608")
 
-mu_2016APV_singlemuonB2 =     lambda: attoAOD_ttw_mu(year="2016APV")
-mu_2016APV_singlemuonC =      lambda: attoAOD_ttw_mu(year="2016APV")
-mu_2016APV_singlemuonD =      lambda: attoAOD_ttw_mu(year="2016APV")
-mu_2016APV_singlemuonE =      lambda: attoAOD_ttw_mu(year="2016APV")
-mu_2016APV_singlemuonF =      lambda: attoAOD_ttw_mu(year="2016APV")
+mu_2016APV_singlemuonB2 =     lambda: attoAOD_ttw_mu(year="2016APV",run="BCD")
+mu_2016APV_singlemuonC =      lambda: attoAOD_ttw_mu(year="2016APV",run="BCD")
+mu_2016APV_singlemuonD =      lambda: attoAOD_ttw_mu(year="2016APV",run="BCD")
+mu_2016APV_singlemuonE =      lambda: attoAOD_ttw_mu(year="2016APV",run="EF")
+mu_2016APV_singlemuonF =      lambda: attoAOD_ttw_mu(year="2016APV",run="EF")
 mu_2016APV_ttjets =           lambda: attoAOD_ttw_mu(year="2016APV",mctype="20")
 mu_2016APV_wjetstolnu =       lambda: attoAOD_ttw_mu(year="2016APV",mctype="21")
 mu_2016APV_dyjetstoll =       lambda: attoAOD_ttw_mu(year="2016APV",mctype="22")

@@ -1,0 +1,5 @@
+#for new 1mil central signal
+
+python3 nano_to_atto.py -l mu -y 2018 -d eta_M500 -n 1 -o /cms/thayil/pseudoaxions/pseudoaxions_files/atto_passTrigger/
+
+python3 nano_to_atto.py -l mu -y 2018 -d eta_M500 -o /cms/thayil/pseudoaxions/pseudoaxions_files/atto_passTrigger/ -m hadd -hd /cms/thayil/pseudoaxions/pseudoaxions_files/hadded_atto/
